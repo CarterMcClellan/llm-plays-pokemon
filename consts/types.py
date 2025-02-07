@@ -5,7 +5,7 @@ TYPE_MAP = {
     0x03: "Poison",
     0x04: "Ground",
     0x05: "Rock",
-    0x06: "Bird", # unused
+    0x06: "Bird",  # unused
     0x07: "Bug",
     0x08: "Ghost",
     0x14: "Fire",

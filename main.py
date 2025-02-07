@@ -7,7 +7,7 @@ if __name__ == "__main__":
     gb_path = "red.gbc"
     head = "null" if headless else "SDL2"
     pyboy = PyBoy(gb_path, window=head)
-    
+
     game_state = PokemonGameState(pyboy)
     action_handler = PokemonActionHandler(pyboy)
 

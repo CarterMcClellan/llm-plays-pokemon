@@ -1,12 +1,5 @@
-# Download the rom
-```
-./get_red_rom.sh
-```
-
 # Run the game
-```
-pyboy red.gbc
-```
+after legally optaining a gbc file, place it in the root directoyr of the repo with the name `red.gbc`
 
 # Goals
 Build an ai agent which can beat pokemon red - the way a human would, by just looking at the screen and taking actions. Not by
