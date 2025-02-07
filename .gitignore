@@ -1,0 +1,4 @@
+*.gbc
+*.gbc.ram
+__pycache__/
+get_red_rom.sh

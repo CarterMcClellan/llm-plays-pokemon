@@ -1,0 +1,2 @@
+Ok so if I just naively prompt claude with screen shots of that game and what action it should take, it doesn't seem
+too liable to get it right, but lets try augmenting it with a location, and maybe other basic information.
