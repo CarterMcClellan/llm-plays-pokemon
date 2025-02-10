@@ -1,21 +1,51 @@
-from pyboy import PyBoy
-from pokemon_game_state import PokemonGameState
-from pokemon_action_handler import PokemonActionHandler
+import argparse
 
-if __name__ == "__main__":
-    headless = False
-    gb_path = "red.gbc"
+def parse_args():
+    parser = argparse.ArgumentParser(description="Pokemon Red/Blue utility")
+    parser.add_argument("--rom", type=str, help="Path to the GameBoy ROM file to run")
+    parser.add_argument(
+        "--headless", action="store_true", help="Run in headless mode without GUI"
+    )
+    parser.add_argument(
+        "--ram-file", type=str, help="Path to RAM dump file (*.gbc.ram) to analyze"
+    )
+    return parser.parse_args()
+
+
+def analyze_ram(ram_file):
+    """
+    long term I would like this function to be able to edit sram and create interesting save states to test the
+    agent... see the notebook which I have started working on.
+    """
+    pass
+
+def run_game(rom_path, headless):
+    from pyboy import PyBoy
+    from game_enviroment import GameEnviroment
+    from agent import PokemonLLMAgent
+
     head = "null" if headless else "SDL2"
-    pyboy = PyBoy(gb_path, window=head)
+    pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
 
-    game_state = PokemonGameState(pyboy)
-    action_handler = PokemonActionHandler(pyboy)
-
+    game_enviroment = GameEnviroment(pyboy)
+    agent = PokemonLLMAgent()
+    
     while pyboy.tick():
-        game_state.print_game_state()
+        state = game_enviroment.get_game_state()
+        action = agent.get_llm_action(state.screen, state.available_actions)
+        game_enviroment.take_action(action)
 
     pyboy.stop()
 
-    # while True:
-    #     game_state.print_game_state()
-    #     time.sleep(1)
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    if args.ram_file:
+        analyze_ram(args.ram_file)
+    elif args.rom:
+        run_game(args.rom, args.headless)
+    else:
+        print(
+            "Please specify either --rom to run the game or --ram-file to analyze RAM"
+        )

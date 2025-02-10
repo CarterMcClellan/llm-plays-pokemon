@@ -8,5 +8,4 @@ Party Pokemon:
 ```
 
 2. Would be cool if in battle we could see the names of my pokemon, the names of their pokemon, everyones respective pp, etc...
-
 i think that this is all a part of the party_struct

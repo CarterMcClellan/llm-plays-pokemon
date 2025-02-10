@@ -1,82 +1,81 @@
 from pyboy import PyBoy
-from enum import Enum
-import time
+from pyboy.utils import WindowEvent
+import numpy as np
+from skimage.transform import downscale_local_mean
 
-
-class GameActions(Enum):
-    """Enum for available game actions"""
-
-    UP = "up"
-    DOWN = "down"
-    LEFT = "left"
-    RIGHT = "right"
-    A = "a"
-    B = "b"
-    START = "start"
-    SELECT = "select"
-
-
-class PokemonActionHandler:
-    """
-    Handles all game interactions and button inputs for Pokemon Red.
-    Provides methods for common actions and sequences.
-    """
-
-    def __init__(self, pyboy: PyBoy):
-        self.pyboy = pyboy
-        self._button_mapping = {
-            GameActions.UP: "up",
-            GameActions.DOWN: "down",
-            GameActions.LEFT: "left",
-            GameActions.RIGHT: "right",
-            GameActions.A: "button_a",
-            GameActions.B: "button_b",
-            GameActions.START: "button_start",
-            GameActions.SELECT: "button_select",
+class SimplePokemonEnv:
+    def __init__(self, gb_path, headless=False):
+        # Initialize valid actions
+        self.valid_actions = {
+            'up': WindowEvent.PRESS_ARROW_UP,
+            'down': WindowEvent.PRESS_ARROW_DOWN,
+            'left': WindowEvent.PRESS_ARROW_LEFT,
+            'right': WindowEvent.PRESS_ARROW_RIGHT,
+            'a': WindowEvent.PRESS_BUTTON_A,
+            'b': WindowEvent.PRESS_BUTTON_B,
+            'start': WindowEvent.PRESS_BUTTON_START
+        }
+        
+        # Initialize release actions
+        self.release_actions = {
+            'up': WindowEvent.RELEASE_ARROW_UP,
+            'down': WindowEvent.RELEASE_ARROW_DOWN,
+            'left': WindowEvent.RELEASE_ARROW_LEFT,
+            'right': WindowEvent.RELEASE_ARROW_RIGHT,
+            'a': WindowEvent.RELEASE_BUTTON_A,
+            'b': WindowEvent.RELEASE_BUTTON_B,
+            'start': WindowEvent.RELEASE_BUTTON_START
         }
 
-    def press_button(self, action: GameActions, frames_held: int = 1):
-        """Press and hold a button for specified number of frames"""
-        button = self._button_mapping[action]
-        self.pyboy.button(button, True)
-        self.tick(frames_held)
-        self.pyboy.button(button, False)
-        self.tick(1)  # Buffer frame
+        # Initialize PyBoy
+        window_type = "null" if headless else "SDL2"
+        self.pyboy = PyBoy(gb_path, window=window_type)
+        
+        if not headless:
+            self.pyboy.set_emulation_speed(6)
 
-    def tick(self, frames: int = 1):
-        """Advance the game by specified number of frames"""
-        for _ in range(frames):
-            self.pyboy.tick()
+    def get_screen(self, reduce_res=True):
+        """Get the current game screen as a numpy array"""
+        game_pixels = self.pyboy.screen.ndarray[:,:,0:1]  # Get grayscale image
+        if reduce_res:
+            # Reduce resolution by factor of 2
+            game_pixels = downscale_local_mean(game_pixels, (2,2,1)).astype(np.uint8)
+        return game_pixels
 
-    # Common action sequences
-    def walk_steps(self, direction: GameActions, steps: int):
-        """Walk in specified direction for given number of steps"""
-        if direction not in [
-            GameActions.UP,
-            GameActions.DOWN,
-            GameActions.LEFT,
-            GameActions.RIGHT,
-        ]:
-            raise ValueError("Direction must be UP, DOWN, LEFT, or RIGHT")
+    def step(self, action):
+        """Execute an action in the environment
+        
+        Args:
+            action (str): One of 'up', 'down', 'left', 'right', 'a', 'b', 'start'
+        """
+        if action not in self.valid_actions:
+            raise ValueError(f"Invalid action: {action}. Must be one of {list(self.valid_actions.keys())}")
+        
+        # Press button
+        self.pyboy.send_input(self.valid_actions[action])
+        
+        # Hold for 8 frames
+        self.pyboy.tick(8, True)
+        
+        # Release button
+        self.pyboy.send_input(self.release_actions[action])
+        
+        # Wait for remainder of action duration (total 16 frames)
+        self.pyboy.tick(8, True)
+        
+        # Return the new screen
+        return self.get_screen()
 
-        for _ in range(steps):
-            self.press_button(
-                direction, frames_held=16
-            )  # One step is typically 16 frames
+    def reset(self, state_path):
+        """Reset the environment using a saved state"""
+        with open(state_path, "rb") as f:
+            self.pyboy.load_state(f)
+        return self.get_screen()
 
-    def select_menu_item(self, moves: int = 1, confirm: bool = True):
-        """Move down in a menu and optionally confirm selection"""
-        for _ in range(moves):
-            self.press_button(GameActions.DOWN)
-            self.tick(2)
+    def close(self):
+        """Close the environment"""
+        self.pyboy.stop()
 
-        if confirm:
-            self.press_button(GameActions.A)
-
-    def open_menu(self):
-        """Open the main menu"""
-        self.press_button(GameActions.START)
-
-    def close_menu(self):
-        """Close current menu"""
-        self.press_button(GameActions.B)
+    def get_valid_actions(self):
+        """Return list of valid actions"""
+        return list(self.valid_actions.keys())

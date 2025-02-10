@@ -1,13 +1,32 @@
-import numpy as np
-from pyboy import PyBoy
+from enum import Enum
+from typing import NamedTuple
+from pyboy import PyBoy 
+from pyboy.utils import WindowEvent
+from PIL.Image import Image
 from consts.maps import MAP_CONST
 from consts.moves import MOVE_MAP
 from consts.species import SPECIES_MAP
 from consts.status_effect import STATUS_EFFECT_MAP
 from consts.types import TYPE_MAP
 
+class GameState(NamedTuple):
+    available_actions: list[str]
+    screen: Image
 
-class PokemonGameState:
+class GameActions(Enum):
+    A = (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A)
+    B = (WindowEvent.PRESS_BUTTON_B, WindowEvent.RELEASE_BUTTON_B)
+    UP = (WindowEvent.PRESS_ARROW_UP, WindowEvent.RELEASE_ARROW_UP)
+    DOWN = (WindowEvent.PRESS_ARROW_DOWN, WindowEvent.RELEASE_ARROW_DOWN)
+    LEFT = (WindowEvent.PRESS_ARROW_LEFT, WindowEvent.RELEASE_ARROW_LEFT)
+    RIGHT = (WindowEvent.PRESS_ARROW_RIGHT, WindowEvent.RELEASE_ARROW_RIGHT)
+    START = (WindowEvent.PRESS_BUTTON_START, WindowEvent.RELEASE_BUTTON_START)
+
+    def __repr__(self):
+        return self.name.lower()
+
+
+class GameEnviroment:
     """
     Utility class for reading and displaying Pokemon Red game state information.
     Provides methods to access memory locations and interpret game data.
@@ -16,7 +35,9 @@ class PokemonGameState:
     def __init__(self, pyboy: PyBoy):
         self.pyboy = pyboy
 
-        # Memory address constants
+        # All of these random addresses come from the symbol file
+        # https://github.com/pret/pokered/blob/symbols/pokered.sym
+
         self.PARTY_SIZE_ADDR = 0xD163
         self.PARTY_SPECIES_START = 0xD164
 
@@ -39,7 +60,10 @@ class PokemonGameState:
 
         # Add new memory addresses for game state detection
         self.BATTLE_STATE_ADDR = 0xD057  # Battle state indicator
-        self.MENU_STATE_ADDR = 0xD35E  # Current map/menu state
+        self.MENU_STATE_ADDR = 0xD35E    # Current map/menu state
+
+        # Action frequency - How many ticks to wait between actions
+        self.ACTION_FREQ = 10
 
     def read_memory(self, addr: int) -> int:
         """Read a single byte from memory at the given address."""
@@ -65,23 +89,17 @@ class PokemonGameState:
         """Returns True if currently in a battle, False otherwise."""
         return self.read_memory(self.BATTLE_STATE_ADDR) != 0
 
-    def get_game_state(self) -> str:
+    def get_game_state(self) -> GameState:
         """
-        Returns the current game state/context.
-        Possible states include: battle, menu, overworld, etc.
         """
-        if self.is_in_battle():
-            return "battle"
+        game_pixels_render = self.pyboy.screen.ndarray[:,:,0:1]  # (144, 160, 3)
+        screen = Image.fromarray(game_pixels_render)
 
-        # Map value can indicate menus and special states
-        map_value = self.read_memory(self.MENU_STATE_ADDR)
+        return GameState(
+            available_actions=["a", "b", "up", "down", "left", "right", "start"],
+            screen=screen
+        )
 
-        # You can add more specific menu detection based on map values
-        # These would need to be verified with testing
-        if map_value == 0:
-            return "menu"
-        else:
-            return "overworld"
 
     def _read_two_bytes(self, addr: int) -> int:
         """Helper method to read a 2-byte value from memory."""
@@ -193,3 +211,16 @@ class PokemonGameState:
             print(f"    Special:   {pokemon['stats']['special']}")
             print(f"  Moves: {pokemon['moves']}")
             print(f"  PP: {pokemon['pp']}")
+    
+    def take_action(self, action: GameActions):
+        pass
+
+    def run_action_on_emulator(self, action: GameActions):
+        (press, release) = action.value
+        self.pyboy.send_input(press)
+        press_step = 8
+        render = self.save_video or not self.headless
+        self.pyboy.tick(press_step)
+        self.pyboy.send_input(release)
+        self.pyboy.tick(self.ACTION_FREQ - press_step - 1, render)
+        self.pyboy.tick(1, True)

@@ -2,3 +2,5 @@
 *.gbc.ram
 __pycache__/
 get_red_rom.sh
+pokered.sym
+ipynb_checkpoints/
