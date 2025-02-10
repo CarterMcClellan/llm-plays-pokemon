@@ -37,33 +37,34 @@ Respond with just one word - the action to take."""
     
     def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
         """Get next action from LLM based on current screen"""
-        try:
-            response = self.client.generate(
-                model=self.model,
-                prompt=self.get_prompt(valid_actions),
-                images=[screen],
-                stream=False
-            )
+        # try:
+        #     response = self.client.generate(
+        #         model=self.model,
+        #         prompt=self.get_prompt(valid_actions),
+        #         images=[screen],
+        #         stream=False
+        #     )
             
-            action_str: str = response['response'].strip().lower()
+        #     action_str: str = response['response'].strip().lower()
             
-            # Convert string to GameAction enum
-            try:
-                action = GameAction[action_str.upper()]
-                if action not in valid_actions:
-                    self.logger.warning(f"Invalid action from LLM: {action}")
-                    self.invalid_actions += 1
-                    action = GameAction.B
-            except KeyError:
-                self.logger.warning(f"Invalid action string from LLM: {action_str}")
-                self.invalid_actions += 1
-                action = GameAction.B
+        #     # Convert string to GameAction enum
+        #     try:
+        #         action = GameAction[action_str.upper()]
+        #         if action not in valid_actions:
+        #             self.logger.warning(f"Invalid action from LLM: {action}")
+        #             self.invalid_actions += 1
+        #             action = GameAction.B
+        #     except KeyError:
+        #         self.logger.warning(f"Invalid action string from LLM: {action_str}")
+        #         self.invalid_actions += 1
+        #         action = GameAction.B
                 
-            return action
+        #     return action
             
-        except Exception as e:
-            self.logger.error(f"Error getting LLM action: {e}")
-            return GameAction.B  # Default to B on error
+        # except Exception as e:
+        #     self.logger.error(f"Error getting LLM action: {e}")
+        #     return GameAction.B  # Default to B on error
+        return GameAction.A
     
     def get_metrics(self):
         """Get current episode metrics"""

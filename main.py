@@ -39,6 +39,8 @@ def run_game(rom_path, headless):
         state = game_enviroment.get_game_state()
         action = agent.get_llm_action(state.screen, state.available_actions)
         game_enviroment.take_action(action)
+        if not pyboy.tick():
+            break
 
     pyboy.stop()
 

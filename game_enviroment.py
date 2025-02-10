@@ -222,7 +222,7 @@ class GameEnviroment:
             print(f"  PP: {pokemon['pp']}")
     
     def take_action(self, action: GameAction):
-        pass
+        self.run_action_on_emulator(action)
 
     def run_action_on_emulator(self, action: GameAction):
         (press, release) = action.value
