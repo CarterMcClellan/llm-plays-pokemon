@@ -25,12 +25,17 @@ def run_game(rom_path, headless):
     from agent import PokemonLLMAgent
 
     head = "null" if headless else "SDL2"
-    pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
+    debug = False
+    if debug:
+        pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
+    else:
+        pyboy = PyBoy(rom_path, window=head)
 
     game_enviroment = GameEnviroment(pyboy)
     agent = PokemonLLMAgent()
     
-    while pyboy.tick():
+    # while pyboy.tick():
+    while True:
         state = game_enviroment.get_game_state()
         action = agent.get_llm_action(state.screen, state.available_actions)
         game_enviroment.take_action(action)

@@ -1,20 +1,18 @@
 import matplotlib.pyplot as plt
-from anthropic import Anthropic
+from PIL.Image import Image
+from game_enviroment import GameAction
+from ollama import Client
 import logging
 
 class PokemonLLMAgent:
-    def __init__(self, model="claude-3-haiku-20240307"):
+    def __init__(self, model="deepseek-r1:14b"):
         """
         Initialize the Pokemon LLM Agent
         
         Args:
-            gb_path (str): Path to the Pokemon ROM file
-            state_path (str): Path to the save state file
-            api_key (str): Anthropic API key
-            model (str): Anthropic model to use
-            headless (bool): Whether to run without display
+            model (str): Ollama model to use
         """
-        self.client = Anthropic()
+        self.client = Client()
         self.model = model
         
         # Set up logging
@@ -37,33 +35,35 @@ Respond with just one word - the action to take."""
         self.action_history = []
         self.invalid_actions = 0
     
-    def get_llm_action(self, screen_path, valid_actions):
+    def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
         """Get next action from LLM based on current screen"""
         try:
-            message = self.client.messages.create(
+            response = self.client.generate(
                 model=self.model,
-                max_tokens=1,
-                temperature=0.0,
-                messages=[
-                    {"role": "user", "content": [
-                        {"type": "text", "text": self.get_prompt(valid_actions)},
-                        {"type": "image", "source": {"type": "path", "path": screen_path}}
-                    ]}
-                ]
+                prompt=self.get_prompt(valid_actions),
+                images=[screen],
+                stream=False
             )
             
-            action = message.content[0].text.strip().lower()
+            action_str: str = response['response'].strip().lower()
             
-            if action not in valid_actions:
-                self.logger.warning(f"Invalid action from LLM: {action}")
+            # Convert string to GameAction enum
+            try:
+                action = GameAction[action_str.upper()]
+                if action not in valid_actions:
+                    self.logger.warning(f"Invalid action from LLM: {action}")
+                    self.invalid_actions += 1
+                    action = GameAction.B
+            except KeyError:
+                self.logger.warning(f"Invalid action string from LLM: {action_str}")
                 self.invalid_actions += 1
-                action = 'b'  # Default to B if invalid
+                action = GameAction.B
                 
             return action
             
         except Exception as e:
             self.logger.error(f"Error getting LLM action: {e}")
-            return 'b'  # Default to B on error
+            return GameAction.B  # Default to B on error
     
     def get_metrics(self):
         """Get current episode metrics"""

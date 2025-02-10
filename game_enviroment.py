@@ -2,7 +2,7 @@ from enum import Enum
 from typing import NamedTuple
 from pyboy import PyBoy 
 from pyboy.utils import WindowEvent
-from PIL.Image import Image
+from PIL import Image
 from consts.maps import MAP_CONST
 from consts.moves import MOVE_MAP
 from consts.species import SPECIES_MAP
@@ -10,10 +10,10 @@ from consts.status_effect import STATUS_EFFECT_MAP
 from consts.types import TYPE_MAP
 
 class GameState(NamedTuple):
-    available_actions: list[str]
-    screen: Image
+    available_actions: list['GameAction']
+    screen: Image.Image
 
-class GameActions(Enum):
+class GameAction(Enum):
     A = (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A)
     B = (WindowEvent.PRESS_BUTTON_B, WindowEvent.RELEASE_BUTTON_B)
     UP = (WindowEvent.PRESS_ARROW_UP, WindowEvent.RELEASE_ARROW_UP)
@@ -32,8 +32,9 @@ class GameEnviroment:
     Provides methods to access memory locations and interpret game data.
     """
 
-    def __init__(self, pyboy: PyBoy):
+    def __init__(self, pyboy: PyBoy, headless: bool = False):
         self.pyboy = pyboy
+        self.headless = headless
 
         # All of these random addresses come from the symbol file
         # https://github.com/pret/pokered/blob/symbols/pokered.sym
@@ -92,11 +93,19 @@ class GameEnviroment:
     def get_game_state(self) -> GameState:
         """
         """
-        game_pixels_render = self.pyboy.screen.ndarray[:,:,0:1]  # (144, 160, 3)
-        screen = Image.fromarray(game_pixels_render)
+        # game_pixels_render = self.pyboy.screen.ndarray[:,:,0:1]  # (144, 160, 3)
+        screen = self.pyboy.screen.image
 
         return GameState(
-            available_actions=["a", "b", "up", "down", "left", "right", "start"],
+            available_actions=[
+                GameAction.A,
+                GameAction.B,
+                GameAction.UP,
+                GameAction.DOWN,
+                GameAction.LEFT,
+                GameAction.RIGHT,
+                GameAction.START,
+            ],
             screen=screen
         )
 
@@ -212,14 +221,15 @@ class GameEnviroment:
             print(f"  Moves: {pokemon['moves']}")
             print(f"  PP: {pokemon['pp']}")
     
-    def take_action(self, action: GameActions):
+    def take_action(self, action: GameAction):
         pass
 
-    def run_action_on_emulator(self, action: GameActions):
+    def run_action_on_emulator(self, action: GameAction):
         (press, release) = action.value
         self.pyboy.send_input(press)
         press_step = 8
-        render = self.save_video or not self.headless
+        # render = self.save_video or not self.headless
+        render = not self.headless
         self.pyboy.tick(press_step)
         self.pyboy.send_input(release)
         self.pyboy.tick(self.ACTION_FREQ - press_step - 1, render)
