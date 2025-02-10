@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import NamedTuple
-from pyboy import PyBoy 
+from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 from PIL import Image
 from consts.maps import MAP_CONST
@@ -9,9 +9,11 @@ from consts.species import SPECIES_MAP
 from consts.status_effect import STATUS_EFFECT_MAP
 from consts.types import TYPE_MAP
 
+
 class GameState(NamedTuple):
-    available_actions: list['GameAction']
+    available_actions: list["GameAction"]
     screen: Image.Image
+
 
 class GameAction(Enum):
     A = (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A)
@@ -61,7 +63,7 @@ class GameEnviroment:
 
         # Add new memory addresses for game state detection
         self.BATTLE_STATE_ADDR = 0xD057  # Battle state indicator
-        self.MENU_STATE_ADDR = 0xD35E    # Current map/menu state
+        self.MENU_STATE_ADDR = 0xD35E  # Current map/menu state
 
         # Action frequency - How many ticks to wait between actions
         self.ACTION_FREQ = 10
@@ -91,8 +93,7 @@ class GameEnviroment:
         return self.read_memory(self.BATTLE_STATE_ADDR) != 0
 
     def get_game_state(self) -> GameState:
-        """
-        """
+        """ """
         # game_pixels_render = self.pyboy.screen.ndarray[:,:,0:1]  # (144, 160, 3)
         screen = self.pyboy.screen.image
 
@@ -106,9 +107,8 @@ class GameEnviroment:
                 GameAction.RIGHT,
                 GameAction.START,
             ],
-            screen=screen
+            screen=screen,
         )
-
 
     def _read_two_bytes(self, addr: int) -> int:
         """Helper method to read a 2-byte value from memory."""
@@ -220,7 +220,7 @@ class GameEnviroment:
             print(f"    Special:   {pokemon['stats']['special']}")
             print(f"  Moves: {pokemon['moves']}")
             print(f"  PP: {pokemon['pp']}")
-    
+
     def take_action(self, action: GameAction):
         self.run_action_on_emulator(action)
 

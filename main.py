@@ -1,14 +1,26 @@
 import argparse
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Pokemon Red/Blue utility")
-    parser.add_argument("--rom", type=str, help="Path to the GameBoy ROM file to run")
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # ROM command
+    rom_parser = subparsers.add_parser("rom", help="Run a GameBoy ROM file")
+    rom_parser.add_argument("path", type=str, help="Path to the GameBoy ROM file")
+    rom_parser.add_argument(
         "--headless", action="store_true", help="Run in headless mode without GUI"
     )
-    parser.add_argument(
-        "--ram-file", type=str, help="Path to RAM dump file (*.gbc.ram) to analyze"
+    rom_parser.add_argument(
+        "--manual",
+        action="store_true",
+        help="Enable manual control instead of AI agent",
     )
+
+    # RAM analysis command
+    ram_parser = subparsers.add_parser("ram", help="Analyze a RAM dump file")
+    ram_parser.add_argument("path", type=str, help="Path to RAM dump file (*.gbc.ram)")
+
     return parser.parse_args()
 
 
@@ -19,7 +31,8 @@ def analyze_ram(ram_file):
     """
     pass
 
-def run_game(rom_path, headless):
+
+def run_game(rom_path, headless, manual):
     from pyboy import PyBoy
     from game_enviroment import GameEnviroment
     from agent import PokemonLLMAgent
@@ -33,14 +46,18 @@ def run_game(rom_path, headless):
 
     game_enviroment = GameEnviroment(pyboy)
     agent = PokemonLLMAgent()
-    
-    # while pyboy.tick():
-    while True:
-        state = game_enviroment.get_game_state()
-        action = agent.get_llm_action(state.screen, state.available_actions)
-        game_enviroment.take_action(action)
-        if not pyboy.tick():
-            break
+
+    if not manual:
+        while True:
+            state = game_enviroment.get_game_state()
+            action = agent.get_llm_action(state.screen, state.available_actions)
+            game_enviroment.take_action(action)
+            if not pyboy.tick():
+                break
+
+    else:
+        while pyboy.tick():
+            pass
 
     pyboy.stop()
 
@@ -48,11 +65,9 @@ def run_game(rom_path, headless):
 if __name__ == "__main__":
     args = parse_args()
 
-    if args.ram_file:
-        analyze_ram(args.ram_file)
-    elif args.rom:
-        run_game(args.rom, args.headless)
+    if args.command == "ram":
+        analyze_ram(args.path)
+    elif args.command == "rom":
+        run_game(args.path, args.headless, args.manual)
     else:
-        print(
-            "Please specify either --rom to run the game or --ram-file to analyze RAM"
-        )
+        print("Please specify a command. Use --help for more information.")

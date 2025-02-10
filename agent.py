@@ -4,24 +4,25 @@ from game_enviroment import GameAction
 from ollama import Client
 import logging
 
+
 class PokemonLLMAgent:
     def __init__(self, model="deepseek-r1:14b"):
         """
         Initialize the Pokemon LLM Agent
-        
+
         Args:
             model (str): Ollama model to use
         """
         self.client = Client()
         self.model = model
-        
+
         # Set up logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        
+
         # Initialize metrics
         self.reset_metrics()
-        
+
     def get_prompt(self, valid_actions):
         """Create the base prompt for the LLM"""
         return f"""You are playing Pokemon Red. You can see the game screen and must choose the next action.
@@ -34,8 +35,10 @@ Respond with just one word - the action to take."""
         self.total_steps = 0
         self.action_history = []
         self.invalid_actions = 0
-    
-    def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
+
+    def get_llm_action(
+        self, screen: Image, valid_actions: list[GameAction]
+    ) -> GameAction:
         """Get next action from LLM based on current screen"""
         # try:
         #     response = self.client.generate(
@@ -44,9 +47,9 @@ Respond with just one word - the action to take."""
         #         images=[screen],
         #         stream=False
         #     )
-            
+
         #     action_str: str = response['response'].strip().lower()
-            
+
         #     # Convert string to GameAction enum
         #     try:
         #         action = GameAction[action_str.upper()]
@@ -58,21 +61,21 @@ Respond with just one word - the action to take."""
         #         self.logger.warning(f"Invalid action string from LLM: {action_str}")
         #         self.invalid_actions += 1
         #         action = GameAction.B
-                
+
         #     return action
-            
+
         # except Exception as e:
         #     self.logger.error(f"Error getting LLM action: {e}")
         #     return GameAction.B  # Default to B on error
         return GameAction.A
-    
+
     def get_metrics(self):
         """Get current episode metrics"""
         return {
-            'total_steps': self.total_steps,
-            'invalid_actions': self.invalid_actions,
-            'action_frequencies': {
-                action: self.action_history.count(action) 
+            "total_steps": self.total_steps,
+            "invalid_actions": self.invalid_actions,
+            "action_frequencies": {
+                action: self.action_history.count(action)
                 for action in self.valid_actions
-            }
+            },
         }
