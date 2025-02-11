@@ -6,13 +6,35 @@ from agent import OllamaAgent, HuggingFaceAgent
 from game_enviroment import GameAction
 import os
 from dotenv import load_dotenv
+import logging
+import socket
 
 load_dotenv()
 
 SECRET_KEY = os.getenv("AGENT_SERVER_SECRET_KEY")
 
+def get_local_ip():
+    try:
+        # Create a socket to get the local IP address
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Doesn't actually create a connection, just uses the interface
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return 'unknown'
+
 def create_app(agent_type='ollama', model=None, debug=False):
     app = Flask(__name__)
+    
+    # Configure logging
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    logging.info(f"Initializing agent server with {agent_type} agent and model: {model}")
     
     # Initialize the specified agent type
     if agent_type.lower() == 'ollama':
@@ -28,13 +50,16 @@ def create_app(agent_type='ollama', model=None, debug=False):
             # Validate secret key
             request_key = request.headers.get('X-Secret-Key')
             if not request_key or request_key != SECRET_KEY:
+                logging.warning("Unauthorized request attempt with invalid secret key")
                 return jsonify({'error': 'Unauthorized - Invalid or missing secret key'}), 401
 
             if 'image' not in request.files:
+                logging.error("Request received without image file")
                 return jsonify({'error': 'No image file provided'}), 400
 
             image_file = request.files['image']
             image = Image.open(io.BytesIO(image_file.read()))
+            logging.info(f"Received image with size: {image.size}")
             
             valid_actions = request.form.get('valid_actions', '').split(',')
             if not valid_actions or valid_actions == ['']:
@@ -50,6 +75,7 @@ def create_app(agent_type='ollama', model=None, debug=False):
             })
 
         except Exception as e:
+            logging.error(f"Error processing request: {str(e)}", exc_info=True)
             return jsonify({'error': str(e)}), 500
 
     return app
@@ -76,6 +102,7 @@ def main():
     args = parser.parse_args()
     
     app = create_app(agent_type=args.agent, model=args.model, debug=args.debug)
+    logging.info(f"Starting server on {args.host}:{args.port}")
     app.run(host=args.host, port=args.port)
 
 if __name__ == '__main__':
