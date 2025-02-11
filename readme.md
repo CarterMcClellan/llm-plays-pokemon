@@ -10,7 +10,18 @@ having some massive prior of knowledge about the game.
 python main.py rom --manual red.gbc
 ```
 
-# Run the Game with the AI Agent
+# Run the Game with the AI Agent (Locally)
 ```bash
 python main.py rom red.gbc
+```
+
+# Run the Game with the AI Agent (Remotely)
+Start the server on your remote host
+```bash
+export AGENT_SERVER_SECRET_KEY=<your_secret_key> && python server.py --agent huggingface --port 8080 --host 0.0.0.0
+```
+
+Then run the game on your local machine
+```bash
+python main.py rom red.gbc --remote
 ```
