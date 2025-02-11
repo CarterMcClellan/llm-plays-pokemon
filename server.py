@@ -79,7 +79,6 @@ def create_app(agent_type='ollama', model=None, debug=False):
             
             return jsonify({
                 'action': action.name,
-                'metrics': agent.get_metrics()
             })
 
         except Exception as e:
