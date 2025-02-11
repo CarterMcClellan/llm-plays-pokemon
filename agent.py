@@ -124,6 +124,14 @@ class HuggingFaceAgent(BasePokemonAgent):
             output = self.model.generate(**inputs, max_new_tokens=30)
             action_str = self.processor.decode(output[0]).strip().lower()
 
+            # Clean up the action string by extracting just the action word
+            action_str = action_str.split('assistant')[-1]  # Get text after 'assistant'
+            action_str = action_str.replace('<|eot_id|>', '').strip()  # Remove EOT token
+            action_str = action_str.replace('.', '').strip()  # Remove any periods
+
+            if self.debug:
+                self.logger.info(f"Action string: {action_str}")
+
             try:
                 action = GameAction[action_str.upper()]
                 if action not in valid_actions:

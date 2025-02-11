@@ -76,6 +76,7 @@ def create_app(agent_type='ollama', model=None, debug=False):
                 valid_actions = [GameAction[action.upper()] for action in valid_actions]
 
             action = agent.get_llm_action(image, valid_actions)
+            logging.info(f"Predicted action: {action.name}")
             
             return jsonify({
                 'action': action.name,
