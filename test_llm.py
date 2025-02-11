@@ -1,6 +1,8 @@
 from PIL import Image
 import os
 import ollama
+import base64
+from io import BytesIO
 
 def test_llm_vision():
     """Test the vision capabilities of the LLM with a direct ollama call"""
@@ -17,14 +19,19 @@ def test_llm_vision():
     # Create a simple prompt
     prompt = """Look at this image and describe what you see."""
 
+    # Convert image to base64
+    buffered = BytesIO()
+    test_image.save(buffered, format="PNG")
+    img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    
     try:
         # Make direct request to ollama
         response = ollama.chat(
-            model="deepseek-r1:14b",
+            model="llama3.2-vision:11b",
             messages=[{
                 'role': 'user',
                 'content': prompt,
-                'images': [test_image.tobytes()],
+                'images': [img_base64],
             }],
             stream=True
         )
