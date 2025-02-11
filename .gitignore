@@ -4,3 +4,5 @@ __pycache__/
 get_red_rom.sh
 pokered.sym
 ipynb_checkpoints/
+.env
+.DS_Store

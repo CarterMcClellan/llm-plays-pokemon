@@ -5,6 +5,9 @@ import logging
 import ollama
 import torch
 from transformers import MllamaForConditionalGeneration, AutoProcessor
+import requests
+import io
+from typing import Optional
 
 class BasePokemonAgent:
     def __init__(self, debug=False):
@@ -141,4 +144,58 @@ class HuggingFaceAgent(BasePokemonAgent):
 
         except Exception as e:
             self.logger.error(f"Error getting LLM action: {e}")
+            return GameAction.B
+
+class RemoteAgent(BasePokemonAgent):
+    def __init__(self, server_url: str, secret_key: str, debug: bool = False):
+        """
+        Initialize the Remote Pokemon Agent that connects to a server
+
+        Args:
+            server_url (str): URL of the prediction server
+            secret_key (str): Secret key for server authentication
+            debug (bool): Enable debug mode
+        """
+        super().__init__(debug=debug)
+        self.server_url = server_url.rstrip('/')
+        self.secret_key = secret_key
+
+    def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
+        """Get next action from remote server based on current screen"""
+        try:
+            # Convert image to bytes
+            img_byte_arr = io.BytesIO()
+            screen.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+
+            # Prepare the request
+            files = {'image': ('screen.png', img_byte_arr, 'image/png')}
+            headers = {'X-Secret-Key': self.secret_key}
+            data = {'valid_actions': ','.join(action.name.lower() for action in valid_actions)}
+
+            # Make the request
+            response = requests.post(
+                f"{self.server_url}/predict",
+                files=files,
+                data=data,
+                headers=headers
+            )
+
+            if response.status_code != 200:
+                self.logger.error(f"Server error: {response.text}")
+                return GameAction.B
+
+            result = response.json()
+            action_str = result['action'].lower()
+
+            try:
+                action = GameAction[action_str.upper()]
+                if action not in valid_actions:
+                    return self.handle_invalid_action(action_str)
+                return action
+            except KeyError:
+                return self.handle_invalid_action(action_str)
+
+        except Exception as e:
+            self.logger.error(f"Error getting remote action: {e}")
             return GameAction.B
