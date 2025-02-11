@@ -21,14 +21,9 @@ def parse_args():
         help="Enable manual control instead of AI agent",
     )
     rom_parser.add_argument(
-        "--remote",
-        type=str,
-        help="Remote server URL for agent predictions",
-    )
-    rom_parser.add_argument(
         "--agent",
         type=str,
-        choices=["ollama", "huggingface"],
+        choices=["ollama", "huggingface", "remote"],
         default="ollama",
         help="Type of agent to use (default: ollama)",
     )
@@ -48,7 +43,7 @@ def analyze_ram(ram_file):
     pass
 
 
-def run_game(rom_path, headless, manual, remote_url=None, secret_key=None, agent_type="ollama"):
+def run_game(rom_path, headless, manual, agent_type="ollama"):
     from pyboy import PyBoy
     from game_enviroment import GameEnviroment
     from agent import OllamaAgent, HuggingFaceAgent, RemoteAgent
@@ -63,18 +58,13 @@ def run_game(rom_path, headless, manual, remote_url=None, secret_key=None, agent
         pyboy = PyBoy(rom_path, window=head)
 
     game_enviroment = GameEnviroment(pyboy=pyboy, debug=debug)
-
-    secret_key = os.getenv("AGENT_SERVER_SECRET_KEY")
     
-    if remote_url:
-        if not secret_key:
-            raise ValueError("Secret key is required when using remote server")
-        agent = RemoteAgent(server_url=remote_url, secret_key=secret_key, debug=debug)
-    else:
-        if agent_type == "ollama":
-            agent = OllamaAgent(debug=debug)
-        else:  # huggingface
-            agent = HuggingFaceAgent(debug=debug)
+    if agent_type == "remote":
+        agent = RemoteAgent(debug=debug)
+    elif agent_type == "ollama":
+        agent = OllamaAgent(debug=debug)
+    else:  # huggingface
+        agent = HuggingFaceAgent(debug=debug)
 
     if not manual:
         while True:
@@ -100,8 +90,6 @@ if __name__ == "__main__":
             args.path, 
             args.headless, 
             args.manual,
-            args.remote,
-            args.secret_key,
             args.agent
         )
     else:

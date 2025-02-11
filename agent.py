@@ -1,13 +1,9 @@
-import matplotlib.pyplot as plt
 from PIL.Image import Image
 from game_enviroment import GameAction
 import logging
-import ollama
-import torch
-from transformers import MllamaForConditionalGeneration, AutoProcessor
 import requests
 import io
-from typing import Optional
+import os
 
 class BasePokemonAgent:
     def __init__(self, debug=False):
@@ -58,15 +54,17 @@ Respond with just one word - the action to take."""
 
 class OllamaAgent(BasePokemonAgent):
     def __init__(self, model="llama3.2-vision:11b", debug=False):
+        import ollama
         super().__init__(debug=debug)
         self.model = model
+        self.ollama = ollama
 
     def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
         """Get next action from Ollama LLM based on current screen"""
         try:
             screen_as_bytes = screen.tobytes()
             if self.debug:
-                response = ollama.chat(model=self.model, messages=[
+                response = self.ollama.chat(model=self.model, messages=[
                     {
                         'role': 'user',
                         'content': self.get_prompt(valid_actions),
@@ -81,7 +79,7 @@ class OllamaAgent(BasePokemonAgent):
                     print(part_val, end='', flush=True)
                 action_str = curr.strip().lower()
             else:
-                response = ollama.chat(model=self.model, messages=[
+                response = self.ollama.chat(model=self.model, messages=[
                     {
                         'role': 'user',
                         'content': self.get_prompt(valid_actions),
@@ -104,6 +102,8 @@ class OllamaAgent(BasePokemonAgent):
 
 class HuggingFaceAgent(BasePokemonAgent):
     def __init__(self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", debug=False):
+        import torch
+        from transformers import MllamaForConditionalGeneration, AutoProcessor
         super().__init__(debug=debug)
         self.model_id = model_id
         self.model = MllamaForConditionalGeneration.from_pretrained(
@@ -112,6 +112,7 @@ class HuggingFaceAgent(BasePokemonAgent):
             device_map="auto"
         )
         self.processor = AutoProcessor.from_pretrained(model_id)
+        self.torch = torch
 
     def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
         """Get next action from Hugging Face LLM based on current screen"""
@@ -147,18 +148,16 @@ class HuggingFaceAgent(BasePokemonAgent):
             return GameAction.B
 
 class RemoteAgent(BasePokemonAgent):
-    def __init__(self, server_url: str, secret_key: str, debug: bool = False):
+    def __init__(self, debug: bool = False):
         """
         Initialize the Remote Pokemon Agent that connects to a server
 
         Args:
-            server_url (str): URL of the prediction server
-            secret_key (str): Secret key for server authentication
             debug (bool): Enable debug mode
         """
         super().__init__(debug=debug)
-        self.server_url = server_url.rstrip('/')
-        self.secret_key = secret_key
+        self.server_url = f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}"
+        self.secret_key = os.getenv("AGENT_SERVER_SECRET_KEY")
 
     def get_llm_action(self, screen: Image, valid_actions: list[GameAction]) -> GameAction:
         """Get next action from remote server based on current screen"""
