@@ -5,6 +5,9 @@ import argparse
 from agent import OllamaAgent, HuggingFaceAgent
 from game_enviroment import GameAction
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SECRET_KEY = os.getenv("AGENT_SERVER_SECRET_KEY")
 

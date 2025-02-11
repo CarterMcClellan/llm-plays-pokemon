@@ -1,5 +1,9 @@
 import argparse
+import os
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Pokemon Red/Blue utility")
@@ -20,11 +24,6 @@ def parse_args():
         "--remote",
         type=str,
         help="Remote server URL for agent predictions",
-    )
-    rom_parser.add_argument(
-        "--secret-key",
-        type=str,
-        help="Secret key for remote server authentication",
     )
     rom_parser.add_argument(
         "--agent",
@@ -64,6 +63,8 @@ def run_game(rom_path, headless, manual, remote_url=None, secret_key=None, agent
         pyboy = PyBoy(rom_path, window=head)
 
     game_enviroment = GameEnviroment(pyboy=pyboy, debug=debug)
+
+    secret_key = os.getenv("AGENT_SERVER_SECRET_KEY")
     
     if remote_url:
         if not secret_key:
