@@ -8,10 +8,18 @@ import os
 from dotenv import load_dotenv
 import logging
 import socket
+import requests
 
 load_dotenv()
 
 SECRET_KEY = os.getenv("AGENT_SERVER_SECRET_KEY")
+
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org')
+        return response.text
+    except Exception:
+        return 'unknown'
 
 def get_local_ip():
     try:
@@ -102,7 +110,11 @@ def main():
     args = parser.parse_args()
     
     app = create_app(agent_type=args.agent, model=args.model, debug=args.debug)
+    local_ip = get_local_ip()
+    public_ip = get_public_ip()
     logging.info(f"Starting server on {args.host}:{args.port}")
+    logging.info(f"Local IP: {local_ip}")
+    logging.info(f"Public IP: {public_ip}")
     app.run(host=args.host, port=args.port)
 
 if __name__ == '__main__':
