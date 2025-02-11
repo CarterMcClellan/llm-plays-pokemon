@@ -1,20 +1,19 @@
 import matplotlib.pyplot as plt
 from PIL.Image import Image
 from game_enviroment import GameAction
-from ollama import Client
 import logging
-
+import ollama
 
 class PokemonLLMAgent:
-    def __init__(self, model="deepseek-r1:14b"):
+    def __init__(self, model="deepseek-r1:14b", debug=False):
         """
         Initialize the Pokemon LLM Agent
 
         Args:
             model (str): Ollama model to use
         """
-        self.client = Client()
         self.model = model
+        self.debug = debug
 
         # Set up logging
         logging.basicConfig(level=logging.INFO)
@@ -40,34 +39,52 @@ Respond with just one word - the action to take."""
         self, screen: Image, valid_actions: list[GameAction]
     ) -> GameAction:
         """Get next action from LLM based on current screen"""
-        # try:
-        #     response = self.client.generate(
-        #         model=self.model,
-        #         prompt=self.get_prompt(valid_actions),
-        #         images=[screen],
-        #         stream=False
-        #     )
+        try:
+            screen_as_bytes = screen.tobytes()
+            if self.debug:
+                response = ollama.chat(model=self.model, messages=[
+                    {
+                        'role': 'user',
+                        'content': self.get_prompt(valid_actions),
+                        'images': [screen_as_bytes],
+                    },
+                ], stream=True)
 
-        #     action_str: str = response['response'].strip().lower()
+                curr = ""
+                for part in response:
+                    part_val = part['message']['content']
+                    curr += part_val
+                    print(part_val, end='', flush=True)
 
-        #     # Convert string to GameAction enum
-        #     try:
-        #         action = GameAction[action_str.upper()]
-        #         if action not in valid_actions:
-        #             self.logger.warning(f"Invalid action from LLM: {action}")
-        #             self.invalid_actions += 1
-        #             action = GameAction.B
-        #     except KeyError:
-        #         self.logger.warning(f"Invalid action string from LLM: {action_str}")
-        #         self.invalid_actions += 1
-        #         action = GameAction.B
+                action_str: str = curr.strip().lower()
+            else:
+                response = ollama.chat(model=self.model, messages=[
+                    {
+                        'role': 'user',
+                        'content': self.get_prompt(valid_actions),
+                        'images': [screen_as_bytes],
+                    },
+                ])
 
-        #     return action
+                action_str: str = response['response'].strip().lower()
 
-        # except Exception as e:
-        #     self.logger.error(f"Error getting LLM action: {e}")
-        #     return GameAction.B  # Default to B on error
-        return GameAction.A
+            # Convert string to GameAction enum
+            try:
+                action = GameAction[action_str.upper()]
+                if action not in valid_actions:
+                    self.logger.warning(f"Invalid action from LLM: {action}")
+                    self.invalid_actions += 1
+                    action = GameAction.B
+            except KeyError:
+                self.logger.warning(f"Invalid action string from LLM: {action_str}")
+                self.invalid_actions += 1
+                action = GameAction.B
+
+            return action
+
+        except Exception as e:
+            self.logger.error(f"Error getting LLM action: {e}")
+            return GameAction.B  # Default to B on error
 
     def get_metrics(self):
         """Get current episode metrics"""

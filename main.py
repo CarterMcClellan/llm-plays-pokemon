@@ -1,5 +1,5 @@
 import argparse
-
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Pokemon Red/Blue utility")
@@ -36,16 +36,18 @@ def run_game(rom_path, headless, manual):
     from pyboy import PyBoy
     from game_enviroment import GameEnviroment
     from agent import PokemonLLMAgent
+    import logging
 
     head = "null" if headless else "SDL2"
-    debug = False
+    debug = True
+    logging.info(f"Running game with debug: {debug}")
     if debug:
         pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
     else:
         pyboy = PyBoy(rom_path, window=head)
 
-    game_enviroment = GameEnviroment(pyboy)
-    agent = PokemonLLMAgent()
+    game_enviroment = GameEnviroment(pyboy=pyboy, debug=debug)
+    agent = PokemonLLMAgent(debug=debug)
 
     if not manual:
         while True:
@@ -54,7 +56,6 @@ def run_game(rom_path, headless, manual):
             game_enviroment.take_action(action)
             if not pyboy.tick():
                 break
-
     else:
         while pyboy.tick():
             pass

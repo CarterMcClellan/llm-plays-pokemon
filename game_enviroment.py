@@ -34,9 +34,10 @@ class GameEnviroment:
     Provides methods to access memory locations and interpret game data.
     """
 
-    def __init__(self, pyboy: PyBoy, headless: bool = False):
+    def __init__(self, pyboy: PyBoy, headless: bool = False, debug: bool = False):
         self.pyboy = pyboy
         self.headless = headless
+        self.debug = debug
 
         # All of these random addresses come from the symbol file
         # https://github.com/pret/pokered/blob/symbols/pokered.sym
@@ -93,8 +94,9 @@ class GameEnviroment:
         return self.read_memory(self.BATTLE_STATE_ADDR) != 0
 
     def get_game_state(self) -> GameState:
-        """ """
-        # game_pixels_render = self.pyboy.screen.ndarray[:,:,0:1]  # (144, 160, 3)
+        """ 
+        Returns the current game state.
+        """
         screen = self.pyboy.screen.image
 
         return GameState(
