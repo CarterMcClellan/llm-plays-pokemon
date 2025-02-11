@@ -127,7 +127,9 @@ class HuggingFaceAgent(BasePokemonAgent):
             # Clean up the action string by extracting just the action word
             action_str = action_str.split('assistant')[-1]  # Get text after 'assistant'
             action_str = action_str.replace('<|eot_id|>', '').strip()  # Remove EOT token
+            action_str = action_str.replace('<|end_header_id|>', '').strip()  # Remove header end tag
             action_str = action_str.replace('.', '').strip()  # Remove any periods
+            action_str = action_str.split('\n')[-1].strip()  # Get the last line which should be just the action
 
             if self.debug:
                 self.logger.info(f"Action string: {action_str}")
