@@ -25,7 +25,7 @@ def test_llm_vision():
         messages = [
             {"role": "user", "content": [
                 {"type": "image"},
-                {"type": "text", "text": "If I had to write a haiku for this one, it would be: "}
+                {"type": "text", "text": "Describe the image in detail"}
             ]}
         ]
         
