@@ -1,38 +1,45 @@
-from PIL import Image
-import os
-from transformers import MllamaForConditionalGeneration, AutoProcessor
+import requests
 import torch
+from PIL import Image
+from transformers import MllamaForConditionalGeneration, AutoProcessor
 
 def test_llm_vision():
     """Test the vision capabilities of the LLM with Hugging Face"""
-    # Load a test image
-    test_image_path = "test_data/test_screen.png"
-    if not os.path.exists(test_image_path):
-        raise FileNotFoundError(f"Test image not found at {test_image_path}")
-    
-    test_image = Image.open(test_image_path)
+    # Load a test image from URL
+    url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/0052a70beed5bf71b92610a43a52df6d286cd5f3/diffusers/rabbit.jpg"
+    image = Image.open(requests.get(url, stream=True).raw)
     
     # Print image resolution
-    print(f"Image resolution: {test_image.size}")
+    print(f"Image resolution: {image.size}")
     
-    # Update prompt format
-    prompt = "<|image|><|begin_of_text|>Look at this image and describe what you see."
-
     try:
-        model_name = "meta-llama/Llama-3.2-11B-Vision"
-        # Update model class and dtype
+        model_id = "meta-llama/Llama-3.2-11B-Vision-Instruct"
         model = MllamaForConditionalGeneration.from_pretrained(
-            model_name,
+            model_id,
             torch_dtype=torch.bfloat16,
             device_map="auto"
         )
-        processor = AutoProcessor.from_pretrained(model_name)
+        processor = AutoProcessor.from_pretrained(model_id)
         
-        # Simplify inputs
-        inputs = processor(test_image, prompt, return_tensors="pt").to(model.device)
+        # Create messages in the chat format
+        messages = [
+            {"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": "If I had to write a haiku for this one, it would be: "}
+            ]}
+        ]
+        
+        # Process input using chat template
+        input_text = processor.apply_chat_template(messages, add_generation_prompt=True)
+        inputs = processor(
+            image,
+            input_text,
+            add_special_tokens=False,
+            return_tensors="pt"
+        ).to(model.device)
         
         # Generate response
-        output = model.generate(**inputs, max_new_tokens=100)
+        output = model.generate(**inputs, max_new_tokens=30)
         
         # Decode and print response
         print("LLM Response:")
