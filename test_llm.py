@@ -5,9 +5,9 @@ from transformers import MllamaForConditionalGeneration, AutoProcessor
 
 def test_llm_vision():
     """Test the vision capabilities of the LLM with Hugging Face"""
-    # Load a test image from URL
-    url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/0052a70beed5bf71b92610a43a52df6d286cd5f3/diffusers/rabbit.jpg"
-    image = Image.open(requests.get(url, stream=True).raw)
+    # url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/0052a70beed5bf71b92610a43a52df6d286cd5f3/diffusers/rabbit.jpg"
+    # image = Image.open(requests.get(url, stream=True).raw)
+    image = Image.open("test_data/test_screen.png")
     
     # Print image resolution
     print(f"Image resolution: {image.size}")
