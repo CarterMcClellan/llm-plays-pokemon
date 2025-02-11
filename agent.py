@@ -28,17 +28,6 @@ class BasePokemonAgent:
         self.action_history = []
         self.invalid_actions = 0
 
-    def get_metrics(self):
-        """Get current episode metrics"""
-        return {
-            "total_steps": self.total_steps,
-            "invalid_actions": self.invalid_actions,
-            "action_frequencies": {
-                action: self.action_history.count(action)
-                for action in self.valid_actions
-            },
-        }
-
     def handle_invalid_action(self, action_str: str) -> GameAction:
         """Handle invalid actions by logging and returning default action"""
         self.logger.warning(f"Invalid action string from LLM: {action_str}")
@@ -185,6 +174,9 @@ class RemoteAgent(BasePokemonAgent):
                 return GameAction.B
 
             result = response.json()
+            if self.debug:
+                self.logger.info(result)
+
             action_str = result['action'].lower()
 
             try:
