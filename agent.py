@@ -125,11 +125,7 @@ class HuggingFaceAgent(BasePokemonAgent):
             action_str = self.processor.decode(output[0]).strip().lower()
 
             # Clean up the action string by extracting just the action word
-            action_str = action_str.split('assistant')[-1]  # Get text after 'assistant'
-            action_str = action_str.replace('<|eot_id|>', '').strip()  # Remove EOT token
-            action_str = action_str.replace('<|end_header_id|>', '').strip()  # Remove header end tag
-            action_str = action_str.replace('.', '').strip()  # Remove any periods
-            action_str = action_str.split('\n')[-1].strip()  # Get the last line which should be just the action
+            action_str = parse_hf_action(action_str)
 
             if self.debug:
                 self.logger.info(f"Action string: {action_str}")
@@ -200,3 +196,11 @@ class RemoteAgent(BasePokemonAgent):
         except Exception as e:
             self.logger.error(f"Error getting remote action: {e}")
             return GameAction.B
+
+def parse_hf_action(action_str: str) -> str:
+    action_str = action_str.split('assistant')[-1]  # Get text after 'assistant'
+    action_str = action_str.replace('<|eot_id|>', '').strip()  # Remove EOT token
+    action_str = action_str.replace('<|end_header_id|>', '').strip()  # Remove header end tag
+    action_str = action_str.replace('.', '').strip()  # Remove any periods
+    action_str = action_str.split('\n')[-1].strip()  # Get the last line which should be just the action
+    return action_str
