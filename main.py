@@ -2,6 +2,8 @@ import argparse
 import os
 import time
 from dotenv import load_dotenv
+import numpy as np
+# import keyboard
 
 load_dotenv()
 
@@ -63,7 +65,7 @@ def run_game(rom_path, headless, manual, agent_type="ollama"):
         agent = RemoteAgent(debug=debug)
     elif agent_type == "ollama":
         agent = OllamaAgent(debug=debug)
-    else:  # huggingface
+    else:
         agent = HuggingFaceAgent(debug=debug)
 
     if not manual:
@@ -76,6 +78,8 @@ def run_game(rom_path, headless, manual, agent_type="ollama"):
     else:
         while pyboy.tick():
             pass
+            # if keyboard.is_pressed("q"):
+            #     game_enviroment.take_screen_shot(as_np=True)
 
     pyboy.stop()
 

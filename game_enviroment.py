@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Optional
+import uuid
+import numpy as np
 from pyboy import PyBoy
 from pyboy.utils import WindowEvent
 from PIL import Image
@@ -194,8 +196,6 @@ class GameEnviroment:
         print(f"Position: Map {MAP_CONST[map_n]} at ({x}, {y})")
         print(f"Badges: {self.get_badge_count()}")
 
-        # Add game state context
-        print(f"Game State: {self.get_game_state()}")
         if self.is_in_battle():
             battle_data = self.get_battle_data()
             print("Opponent Pokemon:")
@@ -222,6 +222,18 @@ class GameEnviroment:
             print(f"    Special:   {pokemon['stats']['special']}")
             print(f"  Moves: {pokemon['moves']}")
             print(f"  PP: {pokemon['pp']}")
+
+    def take_screen_shot(self, ofname: Optional[str] = None, as_np: bool = False) -> None:
+        if ofname is None:
+            ofname = f"screen_{uuid.uuid4()}.png"
+
+        if as_np:
+            screen = self.pyboy.screen.ndarray
+            np.save(ofname, screen)
+        else:
+            screen = self.pyboy.screen.image
+            screen.save(ofname)
+
 
     def take_action(self, action: GameAction):
         self.run_action_on_emulator(action)
