@@ -1,23 +1,16 @@
-from enum import Enum
-from typing import NamedTuple, Optional
-import uuid
-import numpy as np
+from agents.base import BaseAgent
 from pyboy import PyBoy
-from pyboy.utils import WindowEvent
-from PIL import Image
+from pyboy import WindowEvent
+from typing import List, Any, NamedTuple
+
 from consts.maps import MAP_CONST
 from consts.moves import MOVE_MAP
 from consts.species import SPECIES_MAP
 from consts.status_effect import STATUS_EFFECT_MAP
 from consts.types import TYPE_MAP
+from base import GameAction, GameState, GameEnvironment
 
-
-class GameState(NamedTuple):
-    available_actions: list["GameAction"]
-    screen: Image.Image
-
-
-class GameAction(Enum):
+class PokemonGameAction(GameAction):
     A = (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A)
     B = (WindowEvent.PRESS_BUTTON_B, WindowEvent.RELEASE_BUTTON_B)
     UP = (WindowEvent.PRESS_ARROW_UP, WindowEvent.RELEASE_ARROW_UP)
@@ -26,24 +19,52 @@ class GameAction(Enum):
     RIGHT = (WindowEvent.PRESS_ARROW_RIGHT, WindowEvent.RELEASE_ARROW_RIGHT)
     START = (WindowEvent.PRESS_BUTTON_START, WindowEvent.RELEASE_BUTTON_START)
 
+    @classmethod
+    def get_all_actions(cls) -> List["PokemonGameAction"]:
+        return [cls.A, cls.B, cls.UP, cls.DOWN, cls.LEFT, cls.RIGHT, cls.START]
+
     def __repr__(self):
         return self.name.lower()
 
+class PokemonGameState(GameState):
+    @classmethod
+    def create(cls, available_actions: List[PokemonGameAction], screen: Any) -> "PokemonGameState":
+        return cls(available_actions=available_actions, screen=screen)
+    
+class PokemonGameEnviromentArgs(NamedTuple):
+    headless: bool
+    debug: bool
+    rom_path: str
 
-class GameEnviroment:
+    @classmethod
+    def create(cls, args: dict) -> "PokemonGameEnviromentArgs":
+        if any([req not in args for req in ["headless", "debug", "rom_path"]]):
+            raise ValueError("Missing required arguments")
+
+        return cls(
+            headless=args["headless"],
+            debug=args["debug"],
+            rom_path=args["rom_path"]
+        )
+
+class PokemonGameEnviroment(GameEnvironment):
     """
     Utility class for reading and displaying Pokemon Red game state information.
     Provides methods to access memory locations and interpret game data.
     """
 
-    def __init__(self, pyboy: PyBoy, headless: bool = False, debug: bool = False):
-        self.pyboy = pyboy
-        self.headless = headless
-        self.debug = debug
+    def __init__(self, args: PokemonGameEnviromentArgs):
+        headless = args.headless
+        debug = args.debug
+        head = "null" if headless else "SDL2"
+        rom_path = args.rom_path
+        if debug:
+            self.pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
+        else:
+            self.pyboy = PyBoy(rom_path, window=head)
 
         # All of these random addresses come from the symbol file
         # https://github.com/pret/pokered/blob/symbols/pokered.sym
-
         self.PARTY_SIZE_ADDR = 0xD163
         self.PARTY_SPECIES_START = 0xD164
 
@@ -223,22 +244,8 @@ class GameEnviroment:
             print(f"  Moves: {pokemon['moves']}")
             print(f"  PP: {pokemon['pp']}")
 
-    def take_screen_shot(self, ofname: Optional[str] = None, as_np: bool = False) -> None:
-        if ofname is None:
-            ofname = f"screen_{uuid.uuid4()}.png"
-
-        if as_np:
-            screen = self.pyboy.screen.ndarray
-            np.save(ofname, screen)
-        else:
-            screen = self.pyboy.screen.image
-            screen.save(ofname)
-
 
     def take_action(self, action: GameAction):
-        self.run_action_on_emulator(action)
-
-    def run_action_on_emulator(self, action: GameAction):
         (press, release) = action.value
         self.pyboy.send_input(press)
         press_step = 8
@@ -248,3 +255,14 @@ class GameEnviroment:
         self.pyboy.send_input(release)
         self.pyboy.tick(self.ACTION_FREQ - press_step - 1, render)
         self.pyboy.tick(1, True)
+
+    def get_system_prompt(self):
+        return """
+        You are a pokemon trainer.
+        """
+
+    def run(self, agent: BaseAgent):
+        while True:
+            game_state = self.get_game_state()
+            action = agent.get_action(game_state)
+            self.take_action(action)

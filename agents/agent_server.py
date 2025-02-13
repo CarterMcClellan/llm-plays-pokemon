@@ -1,9 +1,7 @@
+from agents.huggingface_agent import HuggingFaceAgent
+from agents.ollama_agent import OllamaAgent
 from flask import Flask, request, jsonify
-from PIL import Image
-import io
 import argparse
-from agent import OllamaAgent, HuggingFaceAgent
-from game_enviroment import GameAction
 import os
 from dotenv import load_dotenv
 import logging
@@ -47,10 +45,10 @@ def create_app(agent_type='ollama', model=None, debug=False):
     # Initialize the specified agent type
     if agent_type.lower() == 'ollama':
         model = model or "llama3.2-vision:11b"
-        agent = OllamaAgent(model=model, debug=debug)
+        agent = OllamaAgent(model_name=model, debug=debug)
     else:  # huggingface
         model = model or "meta-llama/Llama-3.2-11B-Vision-Instruct"
-        agent = HuggingFaceAgent(model_id=model, debug=debug)
+        agent = HuggingFaceAgent(model_name=model, debug=debug)
 
     @app.route('/predict', methods=['POST'])
     def predict():
@@ -60,26 +58,22 @@ def create_app(agent_type='ollama', model=None, debug=False):
             if not request_key or request_key != SECRET_KEY:
                 logging.warning("Unauthorized request attempt with invalid secret key")
                 return jsonify({'error': 'Unauthorized - Invalid or missing secret key'}), 401
-
-            if 'image' not in request.files:
-                logging.error("Request received without image file")
-                return jsonify({'error': 'No image file provided'}), 400
-
-            image_file = request.files['image']
-            image = Image.open(io.BytesIO(image_file.read()))
-            logging.info(f"Received image with size: {image.size}")
             
-            valid_actions = request.form.get('valid_actions', '').split(',')
-            if not valid_actions or valid_actions == ['']:
-                valid_actions = [action for action in GameAction]
-            else:
-                valid_actions = [GameAction[action.upper()] for action in valid_actions]
+            if not request.json:
+                logging.error("Request received without JSON data")
+                return jsonify({'error': 'No JSON data provided'}), 400
 
-            action = agent.get_llm_action(image, valid_actions)
-            logging.info(f"Predicted action: {action.name}")
+            as_json = request.json 
+
+            if 'prompt' not in request.json:
+                logging.error("Request received without prompt")
+                return jsonify({'error': 'No prompt provided'}), 400
+
+            prompt = as_json.get('prompt')
+            action = agent.get_action_raw(prompt)
             
             return jsonify({
-                'action': action.name,
+                'action': action,
             })
 
         except Exception as e:

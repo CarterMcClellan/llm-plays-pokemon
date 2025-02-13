@@ -36,52 +36,27 @@ def parse_args():
 
     return parser.parse_args()
 
-
 def analyze_ram(ram_file):
     """
-    long term I would like this function to be able to edit sram and create interesting save states to test the
-    agent... see the notebook which I have started working on.
+    long term I would like this function to be able to edit sram and create interesting environments to test the
+    agent... see the debugging bin notebook which I have started working on.
     """
     pass
 
 
-def run_game(rom_path, headless, manual, agent_type="ollama"):
-    from pyboy import PyBoy
-    from game_enviroment import GameEnviroment
-    from agent import OllamaAgent, HuggingFaceAgent, RemoteAgent
-    import logging
-
-    head = "null" if headless else "SDL2"
-    debug = True
-    logging.info(f"Running game with debug: {debug}")
-    if debug:
-        pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
-    else:
-        pyboy = PyBoy(rom_path, window=head)
-
-    game_enviroment = GameEnviroment(pyboy=pyboy, debug=debug)
+def run_game():
+    game_environment = enviroment_factory()
     
-    if agent_type == "remote":
-        agent = RemoteAgent(debug=debug)
-    elif agent_type == "ollama":
-        agent = OllamaAgent(debug=debug)
-    else:
-        agent = HuggingFaceAgent(debug=debug)
-
+    agent = None
     if not manual:
-        while True:
-            state = game_enviroment.get_game_state()
-            action = agent.get_llm_action(state.screen, state.available_actions)
-            game_enviroment.take_action(action)
-            if not pyboy.tick():
-                break
-    else:
-        while pyboy.tick():
-            pass
-            # if keyboard.is_pressed("q"):
-            #     game_enviroment.take_screen_shot(as_np=True)
-
-    pyboy.stop()
+        if agent_type == "remote":
+            agent = RemoteAgent(debug=debug)
+        elif agent_type == "ollama":
+            agent = OllamaAgent(debug=debug)
+        else:
+            agent = HuggingFaceAgent(debug=debug)
+    
+    game_environment.run(agent)
 
 
 if __name__ == "__main__":

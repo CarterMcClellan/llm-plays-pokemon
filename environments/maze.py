@@ -1,5 +1,5 @@
 from typing import NamedTuple
-from keystroke_listener import ModernKeyboardListener, echo_disabled
+from utils.keystroke_listener import ModernKeyboardListener, echo_disabled
 
 class Position(NamedTuple):
     x: int
@@ -7,7 +7,6 @@ class Position(NamedTuple):
 
 class DungeonGame:
     def __init__(self):
-        # Initialize the map with walls (o), walkable paths (w), and player (p)
         self.map = [
             ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'],
             ['o', 'w', 'w', 'w', 'w', 'w', 'w', 'o'],
@@ -16,7 +15,6 @@ class DungeonGame:
             ['o', 'w', 'w', 'w', 'w', 'w', 'w', 'o'],
             ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o']
         ]
-        # Starting player position
         self.current_position = Position(1, 1)
         self.previous_position = Position(1, 1)
         
@@ -58,7 +56,6 @@ class DungeonGame:
 
     def run(self):
         def handle_key_event(event):
-            # print(f"Key {event['type']}: {event['name']} (keycode: {event['keycode']})")
             if event['type'] == 'down':
                 if event['name'] == 'escape':
                     self.listener.stop()
