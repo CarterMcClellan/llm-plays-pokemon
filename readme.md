@@ -6,4 +6,6 @@ Build an AI agent which can beat Pokemon Red - the way a human would, by just lo
 
 # Current Status
 - [x] Naively connected a vllm (llama 3.2 llb) to a gameboy emulator, prompting the model to "choose" an action. Was not better than random.
-- [ ] Belief is that model cannot see what is going on, thus cannot reason. Thus building a couple simple text based enviroments, which mirror some of the complexity of pokemon, to see how the model does.
+- [x] Belief is that model cannot see what is going on, thus cannot reason. Thus building a couple simple text based enviroments, which mirror some of the complexity of pokemon, to see how the model does.
+    - [ ] Ollama reasoning good, but won't stop talking.
+    - [ ] Text adventure environment needs to be more complex.
