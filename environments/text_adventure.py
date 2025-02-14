@@ -5,6 +5,7 @@ from utils.keystroke_listener import ModernKeyboardListener, echo_disabled
 from environments.base import GameAction, GameEnvironment
 from dataclasses import dataclass
 import pygame
+import re
 
 class Position(NamedTuple):
     x: int
@@ -62,9 +63,6 @@ class TextAdventureGameEnvironment(GameEnvironment):
         self.previous_position = Position(1, 1)
         self.debug = args.debug
 
-        # initialize player poisition
-        self.map[self.current_position.y][self.current_position.x] = 'p'
-        
         # Initialize Pygame
         pygame.init()
         self.tile_size = 50  # pixels per tile
@@ -84,13 +82,12 @@ class TextAdventureGameEnvironment(GameEnvironment):
         # Clear screen
         self.screen.fill((0, 0, 0))
         
-        # Create temporary map with player position
-        temp_map = [list(row) for row in self.map]
-        temp_map[self.previous_position.y][self.previous_position.x] = "w"
-        temp_map[self.current_position.y][self.current_position.x] = "p"
+        # Update map with player position
+        self.map[self.previous_position.y][self.previous_position.x] = "w"
+        self.map[self.current_position.y][self.current_position.x] = "p"
         
         # Draw tiles
-        for y, row in enumerate(temp_map):
+        for y, row in enumerate(self.map):
             for x, tile in enumerate(row):
                 rect = pygame.Rect(
                     x * self.tile_size, 
@@ -121,16 +118,19 @@ class TextAdventureGameEnvironment(GameEnvironment):
             return True
         return False
     
-    def update(self, key):
+    def update(self, action: TextAdventureGameAction):
+        if self.debug:
+            self.logger.info(f"Updating position from {self.current_position} to {action}")
+
         new_x, new_y = self.current_position.x, self.current_position.y
         
-        if key == 'up':
+        if action == TextAdventureGameAction.UP:
             new_y -= 1
-        elif key == 'down':
+        elif action == TextAdventureGameAction.DOWN:
             new_y += 1
-        elif key == 'left':
+        elif action == TextAdventureGameAction.LEFT:
             new_x -= 1
-        elif key == 'right':
+        elif action == TextAdventureGameAction.RIGHT:
             new_x += 1
 
         valid = self.is_valid_move(new_x, new_y)
@@ -149,32 +149,83 @@ class TextAdventureGameEnvironment(GameEnvironment):
 The world contains:
 {TextAdventureTiles.get_tiles_description()}
 You can choose to take any of the following actions: {TextAdventureGameAction.get_all_actions()}
-Return only the action you want to take, for example: "up", do not return any other text
+Return the answer using the answer tag, for example if the answer is "up", return:
+```
+<answer>up</answer>
+```
 """
+
+    def _brute_parse(self, answer: str) -> Optional[str]:
+        # strip everything within the <think></think> tags
+        answer = re.sub(r'<think>(.*?)</think>', '', answer)
+        answer = answer.strip().lower()
+
+        # count all the occurrences of each action
+        action_counts = {
+            "up": answer.count("up"),
+            "down": answer.count("down"),
+            "left": answer.count("left"),
+            "right": answer.count("right")
+        }
+
+        # if no actions found, return None
+        if sum(action_counts.values()) == 0:
+            return None
+
+        # return the action with the highest count
+        most_common_action = max(action_counts, key=action_counts.get)
+        return most_common_action
+                
+    def parse_answer(self, answer: Optional[str]) -> TextAdventureGameAction:
+        if answer:
+            tag_match = re.search(r'<answer>(.*?)</answer>', answer)
+            box_match = re.search(r'\\boxed{\\text{(.*?)}}', answer)
+            brute_match = self._brute_parse(answer)
+            
+            action = None
+            if tag_match:
+                action = tag_match.group(1).strip().lower()
+            elif box_match:
+                action = box_match.group(1).strip().lower()
+            elif brute_match:
+                action = brute_match
+            
+            if action:
+                if action == "up":
+                    return TextAdventureGameAction.UP
+                elif action == "down":
+                    return TextAdventureGameAction.DOWN
+                elif action == "left":
+                    return TextAdventureGameAction.LEFT
+                elif action == "right":
+                    return TextAdventureGameAction.RIGHT
+
+        if self.debug:
+            self.logger.warning(f"No valid action found in answer: {answer}, returning default action: {TextAdventureGameAction.UP}")
+
+        return TextAdventureGameAction.UP
         
-    def take_action(self, action: GameAction):
-        if isinstance(action, TextAdventureGameAction):
-            self.update(action)
-        else:
-            raise ValueError(f"Invalid action: {action}")
-        
-    
     def run(self, agent: Optional[BaseAgent] = None):
         try:
             if agent:
                 while True:
+                    self.render()
                     prompt = self.get_prompt()
                     if self.debug:
                         self.logger.info(f"\nPrompt: {prompt}")  
-                    action = agent.get_action_raw(prompt)
+
+                    raw_action = agent.get_action_raw(prompt)
+                    action = self.parse_answer(raw_action)
+
                     if self.debug:
-                        self.logger.info(f"Action: {action}")    
-                    action = TextAdventureGameAction(action)
-                    self.take_action(action)
+                        self.logger.info(f"\nRaw Action: {raw_action}\nAction Parsed: {action}")    
+
+                    self.update(action)
                     
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             return
+                    
             else:
                 with echo_disabled():
                     self.listener = ModernKeyboardListener(self.handle_key_event)
@@ -189,4 +240,11 @@ Return only the action you want to take, for example: "up", do not return any ot
                 self.listener.stop()
                 pygame.quit()
             elif event['name'] in ['up', 'down', 'left', 'right']:
-                self.update(event['name'])
+                if event['name'] == 'up':
+                    self.update(TextAdventureGameAction.UP)
+                elif event['name'] == 'down':
+                    self.update(TextAdventureGameAction.DOWN)
+                elif event['name'] == 'left':
+                    self.update(TextAdventureGameAction.LEFT)
+                elif event['name'] == 'right':
+                    self.update(TextAdventureGameAction.RIGHT)

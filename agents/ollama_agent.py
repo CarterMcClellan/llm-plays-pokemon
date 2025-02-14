@@ -34,19 +34,19 @@ class OllamaAgent(BaseAgent):
                     {'role': 'user', 'content': prompt}
                 ], stream=True)
 
-                response = ""
+                action_str = ""
                 for chunk in stream:
                     val = chunk['message']['content']
                     if val:
-                        response += val
+                        action_str += val
                         if self.debug:
                             print(val, end='', flush=True)
             else:
                 response = ollama.chat(model=self.model_name, messages=[
                     {'role': 'user', 'content': prompt}
                 ])
+                action_str = response['message']['content'].strip().lower()
 
-            action_str = response['message']['content'].strip().lower()
             action_str = self.postprocess_response(action_str)
             return action_str
         except Exception as e:

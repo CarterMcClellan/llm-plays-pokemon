@@ -27,13 +27,6 @@ class GameEnvironment(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
-    def take_action(self, action: GameAction):
-        """
-        Take an action in the game
-        """
-        raise NotImplementedError
-    
-    @abstractmethod
     def get_prompt(self) -> str:
         """
         Get the system prompt for the game
