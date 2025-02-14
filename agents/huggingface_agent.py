@@ -3,7 +3,7 @@ from .base import BaseAgent
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 class HuggingFaceAgent(BaseAgent):
-    def __init__(self, model_name="microsoft/phi-2", debug=False):
+    def __init__(self, agent_args: dict):
         """
         Initialize HuggingFace agent with specified model
         
@@ -11,10 +11,15 @@ class HuggingFaceAgent(BaseAgent):
             model_name (str): Name of the HuggingFace model to use
             debug (bool): Enable debug mode
         """
-        super().__init__(debug=debug)
-        self.model_name = model_name
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        super().__init__(agent_args)
+        self.debug = agent_args.get("debug", False)
+
+        if not agent_args.get("model_name"):
+            raise ValueError(f"Model name not found in agent arguments: {agent_args}")
+
+        self.model_name = agent_args.get("model_name")
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
 
     def get_action_raw(self, prompt: str) -> Optional[str]:
         """

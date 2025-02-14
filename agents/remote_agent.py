@@ -1,9 +1,10 @@
 from .base import BaseAgent
 from typing import Optional
 import requests
+import os
 
 class RemoteAgent(BaseAgent):
-    def __init__(self, api_url, api_key=None, debug=False):
+    def __init__(self, agent_args: dict):
         """
         Initialize Remote agent that calls an external API
         
@@ -12,9 +13,12 @@ class RemoteAgent(BaseAgent):
             api_key (str, optional): API key for authentication
             debug (bool): Enable debug mode
         """
-        super().__init__(debug=debug)
-        self.api_url = api_url
-        self.headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        super().__init__(agent_args)
+        host = os.environ["AGENT_SERVER_HOST"]
+        port = os.environ["AGENT_SERVER_PORT"]
+        key = os.environ["AGENT_SERVER_SECRET_KEY"]
+        self.api_url = f"{host}:{port}"
+        self.headers = {"Authorization": f"Bearer {key}"}
 
     def get_action_raw(self, prompt: str) -> Optional[str]:
         """

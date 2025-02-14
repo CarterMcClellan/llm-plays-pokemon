@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import NamedTuple, List, Any, Optional
+import logging
 
 from agents.base import BaseAgent
 
@@ -21,24 +22,9 @@ class GameAction(Enum):
         """Returns the default action for the game"""
         raise NotImplementedError
 
-class GameState(NamedTuple):
-    """Base class for game state representation"""
-    available_actions: List[GameAction]
-    screen: Any
-    
-    @classmethod
-    @abstractmethod
-    def create(cls, available_actions: List[GameAction], screen: Any) -> "GameState":
-        """Creates a new game state instance"""
-        raise NotImplementedError
-
 class GameEnvironment(ABC):
-    @abstractmethod
-    def get_game_state(self) -> GameState:
-        """
-        Get the current game state
-        """
-        raise NotImplementedError
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
     def take_action(self, action: GameAction):
@@ -48,7 +34,7 @@ class GameEnvironment(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    def get_system_prompt(self) -> str:
+    def get_prompt(self) -> str:
         """
         Get the system prompt for the game
         """
@@ -81,7 +67,11 @@ def enviroment_factory(args: dict) -> GameEnvironment:
 
     if env_type == "pokemon":
         from environments.pokemon import PokemonGameEnviroment, PokemonGameEnviromentArgs
-        poke_args = PokemonGameEnviromentArgs.create(env_args)
+        poke_args = PokemonGameEnviromentArgs(**env_args)
         return PokemonGameEnviroment(poke_args)
+    elif env_type == "text-adventure":
+        from environments.text_adventure import TextAdventureGameEnvironment, TextAdventureGameEnvironmentArgs
+        text_args = TextAdventureGameEnvironmentArgs(**env_args)
+        return TextAdventureGameEnvironment(text_args)
     else:
         raise ValueError(f"Invalid environment type: {env_type}")

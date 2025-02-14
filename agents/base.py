@@ -3,14 +3,16 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 class BaseAgent(ABC):
-    def __init__(self, debug=False):
+    def __init__(self, agent_args: dict):
         """
         Initialize the base Agent that can work with any game environment
 
         Args:
-            debug (bool): Enable debug mode
+            agent_args (dict): Arguments for the agent
         """
-        self.debug = debug
+        self.agent_args = agent_args
+
+        self.debug = agent_args.get("debug", False)
 
         # Set up logging
         logging.basicConfig(level=logging.INFO)
@@ -49,3 +51,27 @@ class BaseAgent(ABC):
         Postprocess the response from the LLM
         """
         return action
+
+def agent_factory(args: dict) -> BaseAgent:
+    """
+    Factory function to create a BaseAgent instance based on the provided arguments
+    """
+    agent_type = args.get("agent_type")
+    agent_args = args.get("agent_args")
+    if not agent_type or not agent_args:
+        raise ValueError("Missing agent type or arguments")
+    
+    if type(agent_args) != dict:
+        raise ValueError("Agent arguments must be a dictionary")
+    
+    if agent_type == "remote":
+        from agents.remote_agent import RemoteAgent
+        return RemoteAgent(agent_args)
+    elif agent_type == "ollama":
+        from agents.ollama_agent import OllamaAgent
+        return OllamaAgent(agent_args)
+    elif agent_type == "huggingface":
+        from agents.huggingface_agent import HuggingFaceAgent
+        return HuggingFaceAgent(agent_args)
+    else:
+        raise ValueError(f"Invalid agent type: {agent_type}")

@@ -1,14 +1,14 @@
 from agents.base import BaseAgent
 from pyboy import PyBoy
 from pyboy import WindowEvent
-from typing import List, Any, NamedTuple
+from typing import List, Any, NamedTuple, Optional
 
 from consts.maps import MAP_CONST
 from consts.moves import MOVE_MAP
 from consts.species import SPECIES_MAP
 from consts.status_effect import STATUS_EFFECT_MAP
 from consts.types import TYPE_MAP
-from base import GameAction, GameState, GameEnvironment
+from environments.base import GameAction, GameEnvironment
 
 class PokemonGameAction(GameAction):
     A = (WindowEvent.PRESS_BUTTON_A, WindowEvent.RELEASE_BUTTON_A)
@@ -26,11 +26,6 @@ class PokemonGameAction(GameAction):
     def __repr__(self):
         return self.name.lower()
 
-class PokemonGameState(GameState):
-    @classmethod
-    def create(cls, available_actions: List[PokemonGameAction], screen: Any) -> "PokemonGameState":
-        return cls(available_actions=available_actions, screen=screen)
-    
 class PokemonGameEnviromentArgs(NamedTuple):
     headless: bool
     debug: bool
@@ -54,14 +49,14 @@ class PokemonGameEnviroment(GameEnvironment):
     """
 
     def __init__(self, args: PokemonGameEnviromentArgs):
-        headless = args.headless
-        debug = args.debug
-        head = "null" if headless else "SDL2"
-        rom_path = args.rom_path
-        if debug:
-            self.pyboy = PyBoy(rom_path, window=head, log_level="DEBUG")
+        self.headless = args.headless
+        self.debug = args.debug
+        head = "null" if self.headless else "SDL2"
+        self.rom_path = args.rom_path
+        if self.debug:
+            self.pyboy = PyBoy(self.rom_path, window=head, log_level="DEBUG")
         else:
-            self.pyboy = PyBoy(rom_path, window=head)
+            self.pyboy = PyBoy(self.rom_path, window=head)
 
         # All of these random addresses come from the symbol file
         # https://github.com/pret/pokered/blob/symbols/pokered.sym
@@ -115,25 +110,6 @@ class PokemonGameEnviroment(GameEnvironment):
     def is_in_battle(self) -> bool:
         """Returns True if currently in a battle, False otherwise."""
         return self.read_memory(self.BATTLE_STATE_ADDR) != 0
-
-    def get_game_state(self) -> GameState:
-        """ 
-        Returns the current game state.
-        """
-        screen = self.pyboy.screen.image
-
-        return GameState(
-            available_actions=[
-                GameAction.A,
-                GameAction.B,
-                GameAction.UP,
-                GameAction.DOWN,
-                GameAction.LEFT,
-                GameAction.RIGHT,
-                GameAction.START,
-            ],
-            screen=screen,
-        )
 
     def _read_two_bytes(self, addr: int) -> int:
         """Helper method to read a 2-byte value from memory."""
@@ -256,13 +232,24 @@ class PokemonGameEnviroment(GameEnvironment):
         self.pyboy.tick(self.ACTION_FREQ - press_step - 1, render)
         self.pyboy.tick(1, True)
 
-    def get_system_prompt(self):
+    def get_prompt(self):
         return """
         You are a pokemon trainer.
         """
 
-    def run(self, agent: BaseAgent):
-        while True:
-            game_state = self.get_game_state()
-            action = agent.get_action(game_state)
-            self.take_action(action)
+    def run(self, agent: Optional[BaseAgent] = None):
+        if agent:
+            while True:
+                prompt = self.get_prompt()
+                action = agent.get_action_raw(prompt)
+                action = PokemonGameAction(action)
+                self.take_action(action)
+
+                if not self.pyboy.tick():
+                    break
+        else:
+            # no agent -> manual -> just let the 
+            while self.pyboy.tick():
+                pass
+
+        self.pyboy.stop()
