@@ -46,8 +46,7 @@ When interacting with an object, a player will transition into dialogue mode. Wh
 Cutscenes are a series of dialogue and cinematic frames which are played to progress the story. They are not interactable, and the player must wait for them to complete.
 
 # Game State
-So when we encode game state, we want to encode, the mode we are in and the options which are available to the player in that state. For means of convience if there is only one option currently availabe,
-we should just auto-select that option, there is nothing to be gained by asking the llm to reason about it. Now lets think about how we want to encode each of these different kinds of game states.
+So when we encode game state, we want to encode, the mode we are in and the options which are available to the player in that state. For means of convience if there is only one option currently available, we should just auto-select that option, there is nothing to be gained by asking the llm to reason about it. Now lets think about how we want to encode each of these different kinds of game states.
 
 ## Overworld
 Some of the encoding comes naively. We could have a simple grid with some naive encodings
@@ -69,3 +68,8 @@ But already we have a few interesting decisions
 - player position: I think that if the player is facing left and we press up, we won't move up, we will instead face up, so in some cases, we need to press up twice to move up one tile.
 
 I guess for the field of view thing, we can try and simulate a really simple version of this directly in the chat and see how the llm can handle attention across longer sequences.
+
+And our implementation of agent around this can be extremely basic
+```python
+class 
+```
