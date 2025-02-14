@@ -1,3 +1,5 @@
 pyboy
 python-dotenv
 pyobjc
+pygame
+ollama
