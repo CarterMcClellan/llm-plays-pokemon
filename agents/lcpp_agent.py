@@ -18,7 +18,7 @@ class LlamaCppAgent(BaseAgent):
             filename="DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf",
             n_gpu_layers=100,
             n_threads=16,
-            type_k=llama_cpp.GGML_TYPE_Q4_K_M,
+            type_k=llama_cpp.GGML_TYPE_Q4_K,
         )
         
         # self.model = llama_cpp.Llama(
