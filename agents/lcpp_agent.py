@@ -1,6 +1,6 @@
 from .base import BaseAgent
 from typing import Optional
-from llama_cpp import Llama
+import llama_cpp
 
 class LlamaCppAgent(BaseAgent):
     def __init__(self, agent_args: dict):
@@ -13,12 +13,12 @@ class LlamaCppAgent(BaseAgent):
         super().__init__(agent_args)
 
         # make sure the model has been properly downloaded from hf hub
-        self.model = Llama.from_pretrained(
+        self.model = llama_cpp.Llama.from_pretrained(
             # "unsloth/DeepSeek-R1-Distill-Qwen-32B-Q4_K_M",
             "unsloth/DeepSeek-R1-Distill-Qwen-32B-GGUF",
             n_gpu_layers=100,
             n_threads=16,
-            type_k=Llama.GGML_TYPE_Q8_0,
+            type_k=llama_cpp.GGML_TYPE_Q8_0,
         )
         
         # self.model = llama_cpp.Llama(
