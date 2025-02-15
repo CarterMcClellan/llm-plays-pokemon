@@ -15,7 +15,7 @@ def parse_args():
     common_args.add_argument(
         "--agent",
         type=str,
-        choices=["ollama", "remote", "manual"],
+        choices=["ollama", "remote", "manual", "lcpp"],
         default="ollama",
         help="Type of agent to use (default: ollama)",
     )

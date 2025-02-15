@@ -1,5 +1,4 @@
-from agents.huggingface_agent import HuggingFaceAgent
-from agents.ollama_agent import OllamaAgent
+from agents.lcpp_agent import LlamaCppAgent
 from flask import Flask, request, jsonify
 import os
 from dotenv import load_dotenv
@@ -44,7 +43,7 @@ def create_app(
     )
     
     # Initialize the HuggingFaceAgent
-    agent = HuggingFaceAgent(agent_args={"debug": debug})
+    agent = LlamaCppAgent(agent_args={"debug": debug})
 
     @app.route('/predict', methods=['POST'])
     def predict():
