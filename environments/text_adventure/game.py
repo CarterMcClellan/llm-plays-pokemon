@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple
 from .actions import TextAdventureGameAction
-from .tiles import TextAdventureTile, TextAdventureTiles
 
 class Position(NamedTuple):
     x: int
@@ -43,10 +41,10 @@ class TextAdventureGame:
         if valid:
             self.previous_position = self.current_position
             self.current_position = Position(new_x, new_y)
+
         return valid
 
     def get_map_string(self) -> str:
-        # Update map with player position
         self.map[self.previous_position.y][self.previous_position.x] = "w"
         self.map[self.current_position.y][self.current_position.x] = "p"
         return '\n'.join([''.join(row) for row in self.map])

@@ -2,7 +2,6 @@ from typing import Optional
 import pygame
 from environments.base import GameEnvironment
 from agents.base import BaseAgent
-from utils.keystroke_listener import ModernKeyboardListener, echo_disabled
 from .game import TextAdventureGame
 from .renderer import PygameRenderer
 from .parser import ResponseParser
@@ -11,13 +10,19 @@ from .tiles import TextAdventureTiles
 from .args import TextAdventureGameEnvironmentArgs
 
 class TextAdventureGameEnvironment(GameEnvironment):
-    # def __init__(self, map_size: int = 8, debug: bool = False):
     def __init__(self, args: TextAdventureGameEnvironmentArgs):
         super().__init__()
         self.debug = args.debug
         self.game = TextAdventureGame(args.map_size)
         self.renderer = PygameRenderer(self.game)
         self.parser = ResponseParser()
+        self.action_map = {
+            pygame.K_w: TextAdventureGameAction.UP,
+            pygame.K_s: TextAdventureGameAction.DOWN,
+            pygame.K_a: TextAdventureGameAction.LEFT,
+            pygame.K_d: TextAdventureGameAction.RIGHT,
+            pygame.K_q: None  
+        }
 
     def render(self):
         """Render the current game state"""
@@ -31,29 +36,33 @@ class TextAdventureGameEnvironment(GameEnvironment):
         """Parse the LLM response into a game action"""
         return self.parser.parse_answer(answer)
 
-    def handle_key_event(self, key: str) -> bool:
-        """Handle keyboard input for manual play"""
-        action_map = {
-            'w': TextAdventureGameAction.UP,
-            's': TextAdventureGameAction.DOWN,
-            'a': TextAdventureGameAction.LEFT,
-            'd': TextAdventureGameAction.RIGHT,
-            'q': None  # Quit
-        }
+    def handle_pygame_events(self) -> bool:
+        """
+        Handle pygame events and return whether the game should continue running
         
-        if key in action_map:
-            action = action_map[key]
-            if action is None:
-                return False  # Quit game
-            self.update(action)
-            self.render()
+        Returns:
+            bool: False if the game should quit, True otherwise
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key in self.action_map:
+                    action = self.action_map[event.key]
+                    if self.debug:
+                        self.logger.info(f"Key pressed: {pygame.key.name(event.key)}")
+                        self.logger.info(f"Action: {action}")
+                    if action is not None:
+                        self.update(action)
+                    else:
+                        return False  
         return True
 
     def get_prompt(self) -> str:
         return f"""You are in a text adventure. 
 
 ```
-{self.get_map_string()}        
+{self.game.get_map_string()}        
 ```
         
 The world contains:
@@ -67,11 +76,16 @@ Return the answer using the answer tag, for example if the answer is "up", retur
 
     def run(self, agent: Optional[BaseAgent] = None):
         try:
+            running = True
+            
             if agent:
-                while True:
+                while running:
+                    running = self.handle_pygame_events()
+                    if not running:
+                        break
+
                     self.render()
                     prompt = self.get_prompt()
-
                     raw_action = agent.get_action_raw(prompt)
                     action = self.parse_answer(raw_action)
 
@@ -79,15 +93,15 @@ Return the answer using the answer tag, for example if the answer is "up", retur
                         self.logger.info(f"\nRaw Action: {raw_action}\nAction Parsed: {action}")    
 
                     self.update(action)
-                    
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            return
-                    
             else:
-                with echo_disabled():
-                    self.listener = ModernKeyboardListener(self.handle_key_event)
+                self.logger.info("Running in manual mode")
+                self.logger.info("Game Controls: WASD to move, Q to quit")
+                
+                while running:
+                    running = self.handle_pygame_events()
+                    if not running:
+                        break
+                        
                     self.render()
-                    self.listener.run()
         finally:
             pygame.quit()

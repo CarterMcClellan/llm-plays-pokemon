@@ -1,5 +1,6 @@
 import argparse
 from dotenv import load_dotenv
+import logging
 
 from agents.base import agent_factory
 from environments.base import enviroment_factory
@@ -43,6 +44,12 @@ def parse_args():
     return parser.parse_args()
 
 def run_game(args):
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO if not args.debug else logging.DEBUG,
+        format='%(name)s - %(levelname)s - %(message)s'
+    )
+    
     if args.game_type == "server":
         from agents.agent_server import create_app
         create_app(

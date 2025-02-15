@@ -19,6 +19,8 @@ class PygameRenderer:
 
     def render(self):
         self.screen.fill((0, 0, 0))
+        self.game.map[self.game.previous_position.y][self.game.previous_position.x] = "w"
+        self.game.map[self.game.current_position.y][self.game.current_position.x] = "p"
         
         for y, row in enumerate(self.game.map):
             for x, tile in enumerate(row):
@@ -32,8 +34,3 @@ class PygameRenderer:
                 pygame.draw.rect(self.screen, (0, 0, 0), rect, 1)
         
         pygame.display.flip()
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                raise SystemExit

@@ -4,6 +4,7 @@ import time
 from collections import defaultdict
 import subprocess
 import contextlib
+from typing import TypedDict, Callable
 
 class ModernKeyController:
     def __init__(self):
@@ -195,8 +196,14 @@ class ModernKeyController:
         """Convert keycode to key name"""
         return self.keycode_map.get(keycode, f"unknown_{keycode}")
 
+class KeyEvent(TypedDict):
+    type: str  # "up" or "down"
+    keycode: int
+    name: str
+    flags: int
+
 class ModernKeyboardListener:
-    def __init__(self, callback, blocking=False):
+    def __init__(self, callback: Callable[[KeyEvent], None], blocking=False):
         self.callback = callback
         self.blocking = blocking
         self.listening = True
