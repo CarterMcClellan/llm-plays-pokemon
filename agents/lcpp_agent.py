@@ -20,6 +20,7 @@ class LlamaCppAgent(BaseAgent):
             n_threads=16,
             # type_k=llama_cpp.GGML_TYPE_Q4_K,
             type_k=llama_cpp.GGML_TYPE_Q8_0,
+            verbose=False,
         )
         
         # self.model = llama_cpp.Llama(
