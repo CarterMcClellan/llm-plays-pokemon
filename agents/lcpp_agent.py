@@ -21,6 +21,7 @@ class LlamaCppAgent(BaseAgent):
             # type_k=llama_cpp.GGML_TYPE_Q4_K,
             type_k=llama_cpp.GGML_TYPE_Q8_0,
             verbose=False,
+            n_ctx=8192
         )
         
         # self.model = llama_cpp.Llama(
@@ -47,6 +48,7 @@ class LlamaCppAgent(BaseAgent):
                 response = self.model.create_completion(
                     prompt=f"<｜User｜>{prompt}<｜Assistant｜>",
                     stream=True
+                    max_tokens=4096
                 )
                 action_str = ""
                 for chunk in response:
@@ -58,7 +60,8 @@ class LlamaCppAgent(BaseAgent):
             else:
                 response = self.model.create_completion(
                     prompt=f"<｜User｜>{prompt}<｜Assistant｜>",
-                    stream=False
+                    stream=False,
+                    max_tokens=4096
                 )
                 action_str = response['choices'][0]['text'].strip().lower()
 
