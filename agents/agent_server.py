@@ -1,7 +1,6 @@
 from agents.huggingface_agent import HuggingFaceAgent
 from agents.ollama_agent import OllamaAgent
 from flask import Flask, request, jsonify
-import argparse
 import os
 from dotenv import load_dotenv
 import logging
@@ -31,7 +30,12 @@ def get_local_ip():
     except Exception:
         return 'unknown'
 
-def create_app(agent_type='ollama', model=None, debug=False):
+def create_app(
+    agent_type: str,
+    debug: bool,
+    host: str,
+    port: int
+):
     app = Flask(__name__)
     
     # Configure logging
@@ -40,7 +44,7 @@ def create_app(agent_type='ollama', model=None, debug=False):
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
     
-    logging.info(f"Initializing agent server with {agent_type} agent and model: {model}")
+    logging.info(f"Initializing agent server with {agent_type} agent")
     
     # Initialize the specified agent type
     if agent_type.lower() == 'ollama':
@@ -78,34 +82,9 @@ def create_app(agent_type='ollama', model=None, debug=False):
             logging.error(f"Error processing request: {str(e)}", exc_info=True)
             return jsonify({'error': str(e)}), 500
 
-    return app
-
-def main():
-    parser = argparse.ArgumentParser(description='Start the Pokemon Agent Server')
-    parser.add_argument('--agent', 
-                       choices=['ollama', 'huggingface'],
-                       default='ollama',
-                       help='Type of agent to use (ollama or huggingface)')
-    parser.add_argument('--debug',
-                       action='store_true',
-                       help='Enable debug mode')
-    parser.add_argument('--port',
-                       type=int,
-                       default=5000,
-                       help='Port to run the server on')
-    parser.add_argument('--host',
-                       default='0.0.0.0',
-                       help='Host to run the server on')
-
-    args = parser.parse_args()
-    
-    app = create_app(agent_type=args.agent, debug=args.debug)
     local_ip = get_local_ip()
     public_ip = get_public_ip()
-    logging.info(f"Starting server on {args.host}:{args.port}")
+    logging.info(f"Starting server on {host}:{port}")
     logging.info(f"Local IP: {local_ip}")
     logging.info(f"Public IP: {public_ip}")
-    app.run(host=args.host, port=args.port)
-
-if __name__ == '__main__':
-    main()
+    app.run(host=host, port=port)
