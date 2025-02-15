@@ -33,7 +33,7 @@ class HuggingFaceAgent(BaseAgent):
         try:
             # Generate response from model
             inputs = self.tokenizer(prompt, return_tensors="pt")
-            outputs = self.model.generate(**inputs, max_length=50)
+            outputs = self.model.generate(**inputs)
             action_str = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip().lower()
             action_str = self.postprocess_response(action_str)
 
