@@ -63,7 +63,9 @@ def enviroment_factory(args: dict) -> GameEnvironment:
         poke_args = PokemonGameEnviromentArgs(**env_args)
         return PokemonGameEnviroment(poke_args)
     elif env_type == "text-adventure":
-        from environments.text_adventure import TextAdventureGameEnvironment, TextAdventureGameEnvironmentArgs
+        # from environments.text_adventure import TextAdventureGameEnvironment, TextAdventureGameEnvironmentArgs
+        from environments.text_adventure.environment import TextAdventureGameEnvironment
+        from environments.text_adventure.args import TextAdventureGameEnvironmentArgs
         text_args = TextAdventureGameEnvironmentArgs(**env_args)
         return TextAdventureGameEnvironment(text_args)
     else:
