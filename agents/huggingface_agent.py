@@ -2,6 +2,7 @@ from typing import Optional
 from .base import BaseAgent
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+import time
 
 class HuggingFaceAgent(BaseAgent):
     def __init__(self, agent_args: dict):
@@ -30,14 +31,20 @@ class HuggingFaceAgent(BaseAgent):
         Returns:
             GameAction: The chosen action
         """
+        if self.debug:
+            self.logger.info("Recieved prompt: %s", prompt)
+
         prompt = self.preprocess_prompt(prompt)
 
         try:
             # Generate response from model
+            start_time = time.time()
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            
             outputs = self.model.generate(**inputs)
             action_str = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip().lower()
+            end_time = time.time()
+            if self.debug:
+                self.logger.info("Time taken: %s seconds", end_time - start_time)
             
             action_str = self.postprocess_response(action_str)
             return action_str
