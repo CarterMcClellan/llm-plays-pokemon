@@ -1,6 +1,7 @@
 from typing import Optional
 from .base import BaseAgent
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
 class HuggingFaceAgent(BaseAgent):
     def __init__(self, agent_args: dict):
@@ -15,8 +16,9 @@ class HuggingFaceAgent(BaseAgent):
         self.debug = agent_args.get("debug", False)
 
         self.model_name = "unsloth/DeepSeek-R1-Distill-Qwen-32B-bnb-4bit"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
 
     def get_action_raw(self, prompt: str) -> Optional[str]:
         """
@@ -32,7 +34,7 @@ class HuggingFaceAgent(BaseAgent):
 
         try:
             # Generate response from model
-            inputs = self.tokenizer(prompt, return_tensors="pt")
+            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
             outputs = self.model.generate(**inputs)
             action_str = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip().lower()
             action_str = self.postprocess_response(action_str)
