@@ -211,8 +211,6 @@ Return the answer using the answer tag, for example if the answer is "up", retur
                 while True:
                     self.render()
                     prompt = self.get_prompt()
-                    if self.debug:
-                        self.logger.info(f"\nPrompt: {prompt}")  
 
                     raw_action = agent.get_action_raw(prompt)
                     action = self.parse_answer(raw_action)
