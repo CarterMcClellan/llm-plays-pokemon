@@ -31,7 +31,6 @@ def get_local_ip():
         return 'unknown'
 
 def create_app(
-    agent_type: str,
     debug: bool,
     host: str,
     port: int
@@ -44,13 +43,8 @@ def create_app(
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
     
-    logging.info(f"Initializing agent server with {agent_type} agent")
-    
-    # Initialize the specified agent type
-    if agent_type.lower() == 'ollama':
-        agent = OllamaAgent(agent_args={"debug": debug})
-    else:  # huggingface
-        agent = HuggingFaceAgent(agent_args={"debug": debug})
+    # Initialize the HuggingFaceAgent
+    agent = HuggingFaceAgent(agent_args={"debug": debug})
 
     @app.route('/predict', methods=['POST'])
     def predict():

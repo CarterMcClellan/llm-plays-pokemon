@@ -14,7 +14,7 @@ class HuggingFaceAgent(BaseAgent):
         super().__init__(agent_args)
         self.debug = agent_args.get("debug", False)
 
-        self.model_name = "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+        self.model_name = "unsloth/DeepSeek-R1-Distill-Qwen-32B-bnb-4bit"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
 

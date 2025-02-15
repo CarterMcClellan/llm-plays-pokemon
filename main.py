@@ -15,7 +15,7 @@ def parse_args():
     common_args.add_argument(
         "--agent",
         type=str,
-        choices=["ollama", "huggingface", "remote", "manual"],
+        choices=["ollama", "remote", "manual"],
         default="ollama",
         help="Type of agent to use (default: ollama)",
     )
@@ -46,7 +46,6 @@ def run_game(args):
     if args.game_type == "server":
         from agents.agent_server import create_app
         create_app(
-            agent_type=args.agent,
             debug=args.debug,
             host=args.host,
             port=args.port
