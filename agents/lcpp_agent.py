@@ -47,7 +47,7 @@ class LlamaCppAgent(BaseAgent):
             if self.debug:
                 response = self.model.create_completion(
                     prompt=f"<｜User｜>{prompt}<｜Assistant｜>",
-                    stream=True
+                    stream=True,
                     max_tokens=4096
                 )
                 action_str = ""
