@@ -35,10 +35,26 @@ class HuggingFaceAgent(BaseAgent):
         try:
             # Generate response from model
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            outputs = self.model.generate(**inputs)
-            action_str = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip().lower()
+            
+            if self.debug:
+                action_str = ""
+                # Stream the output token by token when in debug mode
+                for output in self.model.generate(
+                    **inputs,
+                    max_length=512,
+                    pad_token_id=self.tokenizer.eos_token_id,
+                    streaming=True
+                ):
+                    new_tokens = output[len(inputs['input_ids'][0]):]
+                    decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+                    if decoded:
+                        action_str += decoded
+                        print(decoded, end='', flush=True)
+            else:
+                outputs = self.model.generate(**inputs)
+                action_str = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip().lower()
+            
             action_str = self.postprocess_response(action_str)
-
             return action_str
         except Exception as e:
             self.logger.error(f"Something went wrong with the HuggingFace model: {e}")
