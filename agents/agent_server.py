@@ -44,11 +44,9 @@ def create_app(agent_type='ollama', model=None, debug=False):
     
     # Initialize the specified agent type
     if agent_type.lower() == 'ollama':
-        model = model or "llama3.2-vision:11b"
-        agent = OllamaAgent(model_name=model, debug=debug)
+        agent = OllamaAgent(agent_args={"debug": debug})
     else:  # huggingface
-        model = model or "meta-llama/Llama-3.2-11B-Vision-Instruct"
-        agent = HuggingFaceAgent(model_name=model, debug=debug)
+        agent = HuggingFaceAgent(agent_args={"debug": debug})
 
     @app.route('/predict', methods=['POST'])
     def predict():
@@ -88,8 +86,6 @@ def main():
                        choices=['ollama', 'huggingface'],
                        default='ollama',
                        help='Type of agent to use (ollama or huggingface)')
-    parser.add_argument('--model',
-                       help='Model identifier to use. Defaults depend on agent type.')
     parser.add_argument('--debug',
                        action='store_true',
                        help='Enable debug mode')
@@ -103,7 +99,7 @@ def main():
 
     args = parser.parse_args()
     
-    app = create_app(agent_type=args.agent, model=args.model, debug=args.debug)
+    app = create_app(agent_type=args.agent, debug=args.debug)
     local_ip = get_local_ip()
     public_ip = get_public_ip()
     logging.info(f"Starting server on {args.host}:{args.port}")

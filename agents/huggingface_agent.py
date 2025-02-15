@@ -14,10 +14,7 @@ class HuggingFaceAgent(BaseAgent):
         super().__init__(agent_args)
         self.debug = agent_args.get("debug", False)
 
-        if not agent_args.get("model_name"):
-            raise ValueError(f"Model name not found in agent arguments: {agent_args}")
-
-        self.model_name = agent_args.get("model_name")
+        self.model_name = "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
 
