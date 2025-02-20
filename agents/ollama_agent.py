@@ -14,8 +14,7 @@ class OllamaAgent(BaseAgent):
         """
         super().__init__(agent_args)
 
-        model_name = os.getenv("OLLAMA_MODEL_NAME")
-        self.model_name = model_name
+        self.model_name = "deepseek-r1:14b"
 
     def get_action_raw(self, prompt: str) -> Optional[str]:
         """

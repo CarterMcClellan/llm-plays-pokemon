@@ -73,5 +73,8 @@ def agent_factory(args: dict) -> BaseAgent:
     elif agent_type == "huggingface":
         from agents.huggingface_agent import HuggingFaceAgent
         return HuggingFaceAgent(agent_args)
+    elif agent_type == "lcpp":
+        from agents.lcpp_agent import LlamaCppAgent
+        return LlamaCppAgent(agent_args)
     else:
         raise ValueError(f"Invalid agent type: {agent_type}")

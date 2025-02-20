@@ -17,8 +17,8 @@ class RemoteAgent(BaseAgent):
         host = os.environ["AGENT_SERVER_HOST"]
         port = os.environ["AGENT_SERVER_PORT"]
         key = os.environ["AGENT_SERVER_SECRET_KEY"]
-        self.api_url = f"{host}:{port}"
-        self.headers = {"Authorization": f"Bearer {key}"}
+        self.api_url = f"http://{host}:{port}/predict"
+        self.headers = {"X-Secret-Key": key}
 
     def get_action_raw(self, prompt: str) -> Optional[str]:
         """

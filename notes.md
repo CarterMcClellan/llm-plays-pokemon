@@ -67,9 +67,4 @@ But already we have a few interesting decisions
 - field of view: we could choose to encode the entire map as the AI's field of view, or we could find a way to encode some "memory" of where the AI has been, and what it can see.
 - player position: I think that if the player is facing left and we press up, we won't move up, we will instead face up, so in some cases, we need to press up twice to move up one tile.
 
-I guess for the field of view thing, we can try and simulate a really simple version of this directly in the chat and see how the llm can handle attention across longer sequences.
-
-And our implementation of agent around this can be extremely basic
-```python
-class 
-```
+I guess for the field of view thing, we can try and simulate a really simple version of this directly in the chat and see how the llm can handle attention across longer sequences. We need to think carefully about how we want to test the models ability to reason over world navigation.
