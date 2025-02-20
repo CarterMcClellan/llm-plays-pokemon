@@ -7,5 +7,7 @@ Build an AI agent which can beat Pokemon Red - the way a human would, by just lo
 # Current Status
 - [x] Naively connected a vllm (llama 3.2 llb) to a gameboy emulator, prompting the model to "choose" an action. Was not better than random.
 - [x] Belief is that model cannot see what is going on, thus cannot reason. Thus building a couple simple text based enviroments, which mirror some of the complexity of pokemon, to see how the model does.
-    - [ ] Ollama reasoning good, but won't stop talking.
-    - [ ] Text adventure environment needs to be more complex.
+    - [x] Ollama reasoning good, but won't stop talking.
+    - [x] Text adventure environment needs to be more complex.
+
+> :warning: In a tool assisted speedrun of pokemon blue, an agent can beat the game in > [25,000 distinct inputs](http://wiki.pokemonspeedruns.com/index.php/Pok%C3%A9mon_Red_Starter_Kit). This is not a realistic number of inputs for an LLM with no prior knowledge to generate, and even if it were, each individual input generation takes ~1 minute, so a complete playthrough would take ~17 days. That's not realistic, so we need to consider a new system.
